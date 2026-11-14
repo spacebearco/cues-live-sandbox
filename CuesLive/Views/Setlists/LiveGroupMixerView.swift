@@ -23,6 +23,9 @@ struct LivePlaybackMixerSplitLayout<MainContent: View>: View {
     @Binding var mixerDetent: LiveGroupMixerDetent
     let onLiveVolumeChange: (UUID?, Double) -> Void
     let onMixChange: () -> Void
+    /// The playing song, whose track gains the faders follow.
+    var song: Song?
+    var onTrackGainsChanged: (Song) -> Void = { _ in }
     @ViewBuilder let mainContent: () -> MainContent
 
     /// `nil` until the user resizes; the mixer then opens at a fraction of the height.
@@ -52,7 +55,9 @@ struct LivePlaybackMixerSplitLayout<MainContent: View>: View {
 
                 LiveGroupMixerPanel(
                     onLiveVolumeChange: onLiveVolumeChange,
-                    onMixChange: onMixChange
+                    onMixChange: onMixChange,
+                    song: song,
+                    onTrackGainsChanged: onTrackGainsChanged
                 )
                 .frame(height: resolvedMixerHeight)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -70,11 +75,15 @@ struct LivePlaybackMixerSplitLayout<MainContent: View>: View {
 struct LiveGroupMixerPanel: View {
     let onLiveVolumeChange: (UUID?, Double) -> Void
     let onMixChange: () -> Void
+    var song: Song?
+    var onTrackGainsChanged: (Song) -> Void = { _ in }
 
     var body: some View {
         LiveGroupMixerView(
             onLiveVolumeChange: onLiveVolumeChange,
-            onMixChange: onMixChange
+            onMixChange: onMixChange,
+            song: song,
+            onTrackGainsChanged: onTrackGainsChanged
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColors.backgroundSecondary)
@@ -111,6 +120,11 @@ struct LiveGroupMixerView: View {
 
     let onLiveVolumeChange: (UUID?, Double) -> Void
     let onMixChange: () -> Void
+    /// The playing song. Its track gains drive the faders (`GroupFaderLink`); `nil` leaves
+    /// the faders on the groups' own levels.
+    var song: Song?
+    /// Called after a fader wrote new gains to the song's tracks.
+    var onTrackGainsChanged: (Song) -> Void = { _ in }
 
     @State private var routingConfig: OutputRoutingConfig?
 
@@ -128,13 +142,14 @@ struct LiveGroupMixerView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .bottom, spacing: 0) {
                     ForEach(mixableGroups) { group in
+                        let tracks = linkedTracks(in: group)
                         LiveGroupChannelStrip(
                             title: group.name,
                             titleColor: TrackGroupPalette.colors(for: group).body,
                             groupID: group.id,
-                            volume: Binding(
-                                get: { group.volume },
-                                set: { group.volume = $0 }
+                            volume: faderLevel(
+                                groupVolume: Binding(get: { group.volume }, set: { group.volume = $0 }),
+                                tracks: tracks
                             ),
                             isMuted: Binding(
                                 get: { group.isMuted },
@@ -142,19 +157,23 @@ struct LiveGroupMixerView: View {
                             ),
                             stripHeight: stripHeight,
                             stripWidth: stripWidth,
-                            onLiveVolumeChange: onLiveVolumeChange,
-                            onMixChange: onMixChange
+                            onLiveVolumeChange: liveVolumeChange(groupID: group.id, tracks: tracks),
+                            onMixChange: mixChange(tracks: tracks)
                         )
                     }
 
                     if let routingConfig {
+                        let tracks = linkedTracks(in: nil)
                         LiveGroupChannelStrip(
                             title: "No Group",
                             titleColor: TrackGroupPalette.colors(forPaletteKey: nil).body,
                             groupID: nil,
-                            volume: Binding(
-                                get: { routingConfig.ungroupedVolume },
-                                set: { routingConfig.ungroupedVolume = $0 }
+                            volume: faderLevel(
+                                groupVolume: Binding(
+                                    get: { routingConfig.ungroupedVolume },
+                                    set: { routingConfig.ungroupedVolume = $0 }
+                                ),
+                                tracks: tracks
                             ),
                             isMuted: Binding(
                                 get: { routingConfig.ungroupedIsMuted },
@@ -162,8 +181,8 @@ struct LiveGroupMixerView: View {
                             ),
                             stripHeight: stripHeight,
                             stripWidth: stripWidth,
-                            onLiveVolumeChange: onLiveVolumeChange,
-                            onMixChange: onMixChange
+                            onLiveVolumeChange: liveVolumeChange(groupID: nil, tracks: tracks),
+                            onMixChange: mixChange(tracks: tracks)
                         )
                     }
                 }

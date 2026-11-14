@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// Panic, the standalone filter sweep, Me Time and the per-song fader mix.
+/// Panic, the standalone filter sweep, Me Time and the song-linked group faders.
 extension LivePlaybackView {
     /// Jumps to one bar before the start of the section playing and keeps (or starts) playback,
     /// so the band gets a bar of pre-roll back into the section.
@@ -51,46 +51,15 @@ extension LivePlaybackView {
         coordinator.applyOutputRouting()
     }
 
-    // MARK: - Per-song fader mix
+    // MARK: - Song-linked faders
 
-    /// Remembers the faders for the song being left and sets them for the one arriving. A song
-    /// without a mix of its own keeps the levels that are up. Skipped mid-fade, when the
-    /// faders hold the fade's levels rather than the mix.
-    func switchSongMix(from oldSongID: UUID?, to newSongID: UUID?) {
-        guard !groupMixFade.isFadedOut, !groupMixFade.isFading else { return }
-        let store = SongGroupMixStore()
-        if let oldSongID {
-            store.save(currentFaderLevels(), for: oldSongID)
-        }
-        guard let newSongID, let levels = store.levels(for: newSongID) else { return }
-        for group in mixableGroups() {
-            if let level = levels[group.id] {
-                group.volume = level
+    /// A group fader wrote new gains to `song`'s tracks: play them and save the song.
+    func applyTrackGains(of song: Song) {
+        if coordinator.hasLoadedSong(song.id) {
+            for track in song.sortedTracks {
+                coordinator.playbackEngine.setTrackVolume(id: track.id, volume: Float(track.volume))
             }
         }
-        if let level = levels[OutputRoutingStore.ungroupedRouteID] {
-            OutputRoutingStore.config(in: modelContext).ungroupedVolume = level
-        }
-        coordinator.updateGroupMix(context: modelContext)
-    }
-
-    /// Saves the faders as the playing song's mix, after a fader or mute change.
-    func saveCurrentSongMix() {
-        guard !groupMixFade.isFadedOut, !groupMixFade.isFading,
-              let songID = coordinator.currentSong?.id else { return }
-        SongGroupMixStore().save(currentFaderLevels(), for: songID)
-    }
-
-    private func currentFaderLevels() -> [UUID: Double] {
-        var levels: [UUID: Double] = [:]
-        for group in mixableGroups() {
-            levels[group.id] = group.volume
-        }
-        levels[OutputRoutingStore.ungroupedRouteID] = OutputRoutingStore.config(in: modelContext).ungroupedVolume
-        return levels
-    }
-
-    private func mixableGroups() -> [TrackGroup] {
-        TrackGroupStore.sortedGroups(from: modelContext).filter { !TimecodePlaybackSupport.isTimecodeGroup($0) }
+        try? SongProjectBridge.syncProjectFile(for: song, context: modelContext)
     }
 }

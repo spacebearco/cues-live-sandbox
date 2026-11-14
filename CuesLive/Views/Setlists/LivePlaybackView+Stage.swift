@@ -36,8 +36,9 @@ extension LivePlaybackView {
             },
             onMixChange: {
                 coordinator.updateGroupMix(context: modelContext)
-                saveCurrentSongMix()
             },
+            song: coordinator.currentSong,
+            onTrackGainsChanged: applyTrackGains(of:),
             mainContent: {
                 playbackMainSection
             }

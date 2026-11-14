@@ -86,4 +86,12 @@ extension AudioEngineManager {
         }
         applyAnnouncementGain()
     }
+
+    /// Changes one loaded track's gain and nothing else about it.
+    func setTrackVolume(id: UUID, volume: Float) {
+        guard var track = tracks[id], track.settings.volume != volume else { return }
+        track.settings.volume = volume
+        tracks[id] = track
+        applyAllMixSettings()
+    }
 }

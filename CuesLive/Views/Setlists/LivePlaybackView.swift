@@ -334,11 +334,10 @@ struct LivePlaybackView: View {
                     cueFlashPhase.toggle()
                 }
             }
-            .onChange(of: coordinator.currentSong?.id) { oldSongID, songID in
+            .onChange(of: coordinator.currentSong?.id) { _, songID in
                 SetlistEditorLink.shared.activeSongDidChange(to: songID)
                 clearMarkerCue()
                 sectionLoop.reset()
-                switchSongMix(from: oldSongID, to: songID)
                 groupMixFade.cancel()
                 prepareSectionAnnouncements()
             }

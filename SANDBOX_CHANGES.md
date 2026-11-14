@@ -14,6 +14,38 @@ Newest first.
 
 ---
 
+## Build 21 – Setlist faders follow the editor
+
+Josh: "faders follow the volume within the edit window for each song". Build 20 kept a
+separate per-song fader mix; this replaces it with the real link.
+
+- **A setlist group fader is the playing song's track gains in that group.** The fader sits at
+  the group's loudest track (times the group's own level). Moving it scales every track in
+  the group by the same ratio, so their balance holds, and writes the gains to the song, the
+  same values the editor's gain knobs show. Changing a knob in the editor moves the fader.
+  Each song therefore carries its own mix, and the faders move when the song changes.
+- **The group's own level is no longer changed by the fader** when the song has tracks in the
+  group. It stays as a global trim and is what the Fade button ramps. A group with no tracks
+  in the playing song still moves its own level, as before.
+- While dragging, the engine hears the change as a group level scaled to match the thumb; on
+  release the track gains are written, pushed to the engine (`AudioEngineManager.setTrackVolume`)
+  and saved to the song's project file (`SongProjectBridge.syncProjectFile`).
+- Build 20's `SongGroupMixStore` and its tests are removed. Levels it saved in `UserDefaults`
+  (`songGroupMixLevels`) are ignored. Group levels it left behind stay as the global trims.
+
+How: `GroupFaderLink` (pure math), `LiveGroupMixerView+SongLink.swift` (bindings),
+`LivePlaybackView.applyTrackGains(of:)`. The song is passed down through
+`LivePlaybackMixerSplitLayout` and `LiveGroupMixerPanel`. iOS and the remote keep plain
+group faders.
+
+Tests: `GroupFaderLinkTests` (new). Full suite passes; Mac and iOS build clean.
+
+Notes for Blake: a fader move is not on the editor's undo stack. With several tracks in a
+group the fader shows the loudest one, so a quiet track's knob can move without the fader
+moving.
+
+---
+
 ## Build 20 – Batch 3: Panic, Me Time, song mixes
 
 From Josh's notes of 2026-11-13 (`SANDBOX_TODO.md`, batch 3), plus a lag report on build 19.

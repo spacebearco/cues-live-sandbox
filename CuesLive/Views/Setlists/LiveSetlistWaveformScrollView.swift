@@ -15,6 +15,8 @@ struct LiveSetlistWaveformScrollView: View {
     let cueFlashPhase: Bool
     let onSeek: (TimeInterval) -> Void
     let onCueSection: (SongSection) -> Void
+    /// A click on a section's name label in the playing song.
+    var onPlaySection: ((SongSection) -> Void)?
     var onOverlapTapped: ((Int) -> Void)?
     /// When set, tapping a non-current song lane jumps to that song, at the tapped section's start when one was hit.
     var onSelectSong: ((Int, TimeInterval?) -> Void)?
@@ -204,6 +206,7 @@ struct LiveSetlistWaveformScrollView: View {
                 showsMissingMediaWarning: songHasMissingMedia(snapshot.songID),
                 onSeek: onSeek,
                 onCueSection: onCueSection,
+                onPlaySection: onPlaySection,
                 playbackIndex: playbackIndex
             )
             .onGeometryChange(for: LiveSetlistScrollModel.Lane.self) { proxy in

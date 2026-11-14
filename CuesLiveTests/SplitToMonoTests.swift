@@ -83,11 +83,17 @@ final class SplitToMonoTests: XCTestCase {
         XCTAssertEqual(decoded.sourceChannel, 1)
     }
 
-    func testRMSFollowsTheSignalAndFallsAwayWhenItStops() {
+    func testStereoLevelsFollowEachSideAndClearOnReset() {
         let holder = PeakMeterHolder()
-        for _ in 0..<60 { holder.reportMeanSquare(0.25) }
-        XCTAssertEqual(holder.rms(), 0.5, accuracy: 0.01)
+        for _ in 0..<60 {
+            holder.reportStereo(peakLeft: 0.8, peakRight: 0.2, meanSquareLeft: 0.25, meanSquareRight: 0.01)
+        }
+        let levels = holder.stereoLevels()
+        XCTAssertEqual(levels.rmsLeft, 0.5, accuracy: 0.01)
+        XCTAssertEqual(levels.rmsRight, 0.1, accuracy: 0.01)
+        XCTAssertEqual(levels.peakLeft, 0.8, accuracy: 0.05)
+        XCTAssertLessThan(levels.peakRight, levels.peakLeft)
         holder.reset()
-        XCTAssertEqual(holder.rms(), 0)
+        XCTAssertEqual(holder.stereoLevels(), .silent)
     }
 }

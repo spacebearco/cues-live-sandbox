@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// Show / Edit switch for the setlist, with the Show mode jump quantize beside it.
-/// Show: a click on the playing song cues a jump on the next bar, beat or section, and the
-/// song editor (with solo) and output routing are locked. Edit: a click moves the playhead
-/// right there, and nothing is locked.
+/// Show: a click on the playing song cues that section, and everything that isn't for the gig
+/// is hidden or locked (the Jump setting, the song editor with solo, output routing). Edit: a
+/// click moves the playhead right there, the Jump setting shows, and nothing is locked.
 struct SetlistModeControls: View {
     @AppStorage(SetlistPlayMode.storageKey) private var playMode: SetlistPlayMode = SetlistPlayMode.defaultMode
     @AppStorage(ShowQuantize.storageKey) private var quantize: ShowQuantize = .section
@@ -19,15 +19,17 @@ struct SetlistModeControls: View {
                 .background(playMode == .show ? AppColors.Live.showModeBadge : AppColors.Live.editModeBadge, in: Capsule())
                 .accessibilityHidden(true)
 
-            // Cues from clicks, the section list and mapped keys all fire on this, in both modes.
-            Picker("Jump", selection: $quantize) {
-                ForEach(ShowQuantize.allCases) { option in
-                    Text(option.title).tag(option)
+            // Set up in Edit mode. Cues keep firing on it in Show mode, where it is hidden.
+            if playMode == .edit {
+                Picker("Jump", selection: $quantize) {
+                    ForEach(ShowQuantize.allCases) { option in
+                        Text(option.title).tag(option)
+                    }
                 }
+                .pickerStyle(.menu)
+                .fixedSize()
+                .help("A cued section starts at: \(quantize.title.lowercased()).")
             }
-            .pickerStyle(.menu)
-            .fixedSize()
-            .help("A cued section starts at: \(quantize.title.lowercased()).")
 
             Picker("Mode", selection: $playMode) {
                 ForEach(SetlistPlayMode.allCases) { mode in
@@ -38,7 +40,7 @@ struct SetlistModeControls: View {
             .labelsHidden()
             .fixedSize()
             .help(playMode == .show
-                ? "Show mode: clicks cue quantized jumps. Editing, solo and routing are locked."
+                ? "Show mode: clicks cue sections. Editing, solo and routing are locked."
                 : "Edit mode: clicks move the playhead anywhere.")
         }
     }

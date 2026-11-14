@@ -240,9 +240,7 @@ final class TrackMemoryPlayer {
             } else {
                 swapFade.fadeIn(buffers, frameCount: Int(frameCount))
             }
-            let level = Self.level(in: outputBuffer, frameCount: frameCount)
-            peakMeter.report(level.peak)
-            peakMeter.reportMeanSquare(level.meanSquare)
+            reportLevels(of: outputBuffer, frameCount: frameCount)
         }
 
         /// Fills `outputBuffer` at unity gain. Returns `false` when nothing was
@@ -539,28 +537,34 @@ final class TrackMemoryPlayer {
             mix.isAudible ? max(mix.volume, 0) : 0
         }
 
-        /// Sample peak and mean square of the block, across all channels.
-        private static func level(
-            in outputBuffer: UnsafeMutablePointer<AudioBufferList>,
-            frameCount: AVAudioFrameCount
-        ) -> (peak: Float, meanSquare: Float) {
+        /// Reports the block's sample peak and mean square for each side. A mono block reads
+        /// the same on both.
+        private func reportLevels(of outputBuffer: UnsafeMutablePointer<AudioBufferList>, frameCount: AVAudioFrameCount) {
             let buffers = UnsafeMutableAudioBufferListPointer(outputBuffer)
-            guard frameCount > 0, !buffers.isEmpty else { return (0, 0) }
+            guard frameCount > 0, !buffers.isEmpty else { return }
+            let left = Self.level(of: buffers[0], frameCount: frameCount)
+            let right = buffers.count > 1 ? Self.level(of: buffers[1], frameCount: frameCount) : left
+            peakMeter.report(max(left.peak, right.peak))
+            peakMeter.reportStereo(
+                peakLeft: left.peak,
+                peakRight: right.peak,
+                meanSquareLeft: left.meanSquare,
+                meanSquareRight: right.meanSquare
+            )
+        }
 
+        private static func level(of buffer: AudioBuffer, frameCount: AVAudioFrameCount) -> (peak: Float, meanSquare: Float) {
+            guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { return (0, 0) }
+            let count = min(Int(frameCount), Int(buffer.mDataByteSize) / MemoryLayout<Float>.size)
+            guard count > 0 else { return (0, 0) }
             var peak: Float = 0
             var sum: Float = 0
-            var samples = 0
-            for buffer in buffers {
-                guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
-                let count = min(Int(frameCount), Int(buffer.mDataByteSize) / MemoryLayout<Float>.size)
-                for index in 0..<count {
-                    let value = data[index]
-                    peak = max(peak, abs(value))
-                    sum += value * value
-                }
-                samples += count
+            for index in 0..<count {
+                let value = data[index]
+                peak = max(peak, abs(value))
+                sum += value * value
             }
-            return (peak, samples > 0 ? sum / Float(samples) : 0)
+            return (peak, sum / Float(count))
         }
 
         func prepareLoopPrefetch(atMasterTimeline masterLoopStart: TimeInterval?) {
@@ -687,9 +691,9 @@ final class TrackMemoryPlayer {
         renderContext.peakMeter.reset()
     }
 
-    /// Smoothed RMS of what the track plays (linear), for the track meter.
-    func rmsLevel() -> Float {
-        renderContext.peakMeter.rms()
+    /// Left and right peak and RMS of what the track plays, for the meters.
+    func stereoLevels() -> StereoMeterLevels {
+        renderContext.peakMeter.stereoLevels()
     }
 
     /// Closes the Fade button's low-pass sweep by `closure` (0 open … 1 closed).

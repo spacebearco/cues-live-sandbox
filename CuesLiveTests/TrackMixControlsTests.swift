@@ -8,7 +8,7 @@ final class TrackMixReadoutTests: XCTestCase {
         XCTAssertEqual(TrackMixReadout.volumeText(forGain: 1), "0")
         XCTAssertEqual(TrackMixReadout.volumeText(forGain: MixerFaderScale.linearGain(forDecibels: -10)), "-10")
         XCTAssertEqual(TrackMixReadout.volumeText(forGain: MixerFaderScale.linearGain(forDecibels: 3.5)), "+3.5")
-        XCTAssertEqual(TrackMixReadout.volumeText(forGain: MixerFaderScale.linearGain(forDecibels: 6)), "+6")
+        XCTAssertEqual(TrackMixReadout.volumeText(forGain: MixerFaderScale.linearGain(forDecibels: 10)), "+10")
         XCTAssertEqual(TrackMixReadout.volumeText(forGain: 0), "-inf")
     }
 
@@ -25,9 +25,9 @@ final class TrackMixReadoutTests: XCTestCase {
         XCTAssertEqual(TrackMixReadout.gain(fromVolumeText: "0"), 1)
     }
 
-    func testTypedVolumeCapsAtPlusSixDecibels() throws {
+    func testTypedVolumeCapsAtPlusTenDecibels() throws {
         let capped = try XCTUnwrap(TrackMixReadout.gain(fromVolumeText: "20"))
-        XCTAssertEqual(capped, MixerFaderScale.linearGain(forDecibels: 6), accuracy: 1e-9)
+        XCTAssertEqual(capped, MixerFaderScale.linearGain(forDecibels: 10), accuracy: 1e-9)
     }
 
     func testTypedVolumeAtOrBelowFloorIsSilent() {

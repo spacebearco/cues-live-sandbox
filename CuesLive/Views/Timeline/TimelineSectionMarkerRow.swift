@@ -3,9 +3,10 @@ import SwiftUI
 import AppKit
 #endif
 
-/// Sections on the marker ruler, drawn as square-cornered blocks. Click a block to select it.
-/// Dragging an edge of the selected block moves only that edge; dragging the boundary between two
-/// unselected blocks moves both. Right-click the row to add, rename, loop, or remove a marker.
+/// Sections on the marker ruler, drawn as square-cornered blocks. Click a block to select it;
+/// double-click it to play its section (cue it, while playing). Dragging an edge of the selected
+/// block moves only that edge; dragging the boundary between two unselected blocks moves both.
+/// Right-click the row to add, rename, loop, or remove a marker.
 struct TimelineSectionMarkerRowView: View {
     let sections: [SongSection]
     let duration: TimeInterval
@@ -156,6 +157,13 @@ struct TimelineSectionMarkerRowView: View {
                 SpatialTapGesture()
                     .onEnded { event in
                         selectedSectionID = shown.section(atTimeline: timelineTime(at: event.location.x))?.id
+                    }
+            )
+            .simultaneousGesture(
+                SpatialTapGesture(count: 2)
+                    .onEnded { event in
+                        guard let section = shown.section(atTimeline: timelineTime(at: event.location.x)) else { return }
+                        onCueSection(section)
                     }
             )
             .contextMenu {

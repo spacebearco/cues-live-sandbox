@@ -2,22 +2,8 @@
 
 Josh's open notes (2026-11-13), grouped into batches. Work one batch per session: make all the
 changes, then build Mac and iOS and run the full tests once, deliver one numbered build, and log
-it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 16; its
-full test suite was not run, so run it at the start of batch 1.
-
-## Batch 1 – Quick fixes
-
-- Remove the Next Beat quantize option (keep End of Section and Next Bar).
-- In Show mode, hide the controls that don't belong on a gig: the Jump (quantize) menu and the
-  song editor button. Cues still fire on the saved Jump setting.
-- Move the Show | Edit switch (and its badge) to the far top right of the setlist toolbar.
-- Setlist meter: clicking the CLIP light resets it.
-- Setlist group faders: double-click or Command-click resets to unity.
-- Setlist group faders: top of travel is +10 dB (now +6).
-- Stereo meters (L and R) where meters are mono today: the setlist group mixer and the editor's
-  track meter.
-- A hotkey to open the song editor from the setlist (Edit mode only).
-- Clicking a section marker plays that section (setlist, and editor markers).
+it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 17 (batch 1,
+done).
 
 ## Batch 2 – Setlist layout
 

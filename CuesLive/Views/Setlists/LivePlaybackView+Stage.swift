@@ -183,6 +183,7 @@ extension LivePlaybackView {
                 cueFlashPhase: cueFlashPhase,
                 onSeek: handleWaveformClick(at:),
                 onCueSection: cueSection,
+                onPlaySection: playSection,
                 onOverlapTapped: { playbackIndex in
                     presentOverlapEditor(forPlaybackIndex: playbackIndex)
                 },

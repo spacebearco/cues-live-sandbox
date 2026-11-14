@@ -14,6 +14,41 @@ Newest first.
 
 ---
 
+## Build 17 – Batch 1 quick fixes
+
+From Josh's notes of 2026-11-13 (`SANDBOX_TODO.md`, batch 1). One build for the whole batch.
+
+- **Next Beat quantize removed.** `ShowQuantize` is End of Section or Next Bar. A saved "beat"
+  setting no longer decodes, so `@AppStorage` falls back to End of Section. The beat planning
+  code and its tests are gone (`ShowJumpPlanner.swift`).
+- **Show mode hides what isn't for the gig:** the Jump menu and the Song Editor toolbar button
+  are hidden, not just disabled. Cues still fire on the saved Jump setting.
+- **Show | Edit switch at the far top right:** it is now the last item in the setlist toolbar
+  (`LiveSetlistToolbar.swift`).
+- **Hotkey for the editor:** Command-E opens (or closes) the song editor from the setlist, in
+  Edit mode only. It is a shortcut on Blake's toolbar toggle, and listed in Help ▸ Shortcuts.
+- **CLIP light resets the setlist meter** when clicked.
+- **Group faders reset to unity** on a double-click or a Command-click (`MixerFaderColumn`).
+- **Faders reach +10 dB** (was +6). `MixerFaderScale` marks are now every 10 dB: +10, 0, −10 …
+  −60. The editor's gain knob and typed values share the scale, so they also reach +10.
+- **Stereo meters:** the setlist group meters and the editor's track meters show left and right.
+  `PeakMeterHolder.reportStereo` keeps a falling peak and a smoothed RMS per side
+  (`StereoMeterLevels`); `AudioEngineManager.trackStereoLevels(id:)` and
+  `groupStereoLevels(for:)` read them. The mono `trackRMSLevel` / `rmsLevel` were removed.
+  Group meters show peak per side; track meters show RMS with peak above, per side.
+- **Click a section marker to play it:**
+  - Setlist: a click on a section's name label plays that section. Stopped, it starts from the
+    section's first beat. Playing, Show mode cues it and Edit mode jumps at once
+    (`LivePlaybackView.playSection`). The click target sits above Blake's waveform tap gesture.
+  - Editor: a click on a marker in the section ruler runs the existing cue action (play from the
+    section when stopped, cue it when playing). In the editor window that follows the setlist,
+    Blake's rule still applies and the click does nothing there.
+- **Tests:** `ShowJumpPlannerTests` (beat fallback), `MixerFaderScaleTests` and
+  `TrackMixControlsTests` (+10), `SplitToMonoTests.testStereoLevelsFollowEachSideAndClearOnReset`.
+  Build 16 got its missing full run first: 425 passed.
+
+---
+
 ## Build 16 – Meter fix, section-first quantize, fade in bars, audible sweep, mode badge
 
 - **Setlist meter froze:** the sampling loop now belongs to each meter view's own `.task`, so a

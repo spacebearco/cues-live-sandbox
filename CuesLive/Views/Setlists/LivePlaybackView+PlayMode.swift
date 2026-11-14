@@ -23,6 +23,26 @@ extension LivePlaybackView {
         }
     }
 
+    /// A click on a section's name label plays that section. Stopped, playback starts from its
+    /// first beat. Playing, Show mode cues it (on the Jump setting) and Edit mode jumps at once.
+    func playSection(_ section: SongSection) {
+        guard coordinator.isPlaying else {
+            clearMarkerCue()
+            sectionLoop.endLoopIfActive()
+            coordinator.seek(to: section.timelineStartSeconds)
+            coordinator.play()
+            return
+        }
+        switch playMode {
+        case .show:
+            cueSection(section)
+        case .edit:
+            clearMarkerCue()
+            sectionLoop.endLoopIfActive()
+            coordinator.seek(to: section.timelineStartSeconds)
+        }
+    }
+
     /// A click on a section cues that section; the Jump setting decides when it fires. A song
     /// without sections jumps to the clicked bar or beat line instead.
     private func showModeClick(at time: TimeInterval, in snapshot: LiveSongWaveformSnapshot) {

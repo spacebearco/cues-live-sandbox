@@ -858,6 +858,8 @@
 		88ACF21DF1EB8680A89AF05D /* PlaybackCoordinator+FadeLength.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E883F22FA5FD6FF73C09DC0 /* PlaybackCoordinator+FadeLength.swift */; };
 		45C65BD1D3671D6CEA06D442 /* PlaybackCoordinator+FadeLength.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E883F22FA5FD6FF73C09DC0 /* PlaybackCoordinator+FadeLength.swift */; };
 		11B60577FB2F23F05BD5EB89 /* FadeFilterEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FFEAAB7751EAD484B3F952 /* FadeFilterEngineTests.swift */; };
+		38688C4492384E1862D1C872 /* StereoMeterLevels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC06A4699FE1A1BFD34276DB /* StereoMeterLevels.swift */; };
+		DC551B22FE8A1E88AB726945 /* StereoMeterLevels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC06A4699FE1A1BFD34276DB /* StereoMeterLevels.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1345,6 +1347,7 @@
 		BDF163CDA82EBA588D6A2F78 /* TimecodeDefaultRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimecodeDefaultRouteTests.swift; sourceTree = "<group>"; };
 		5E883F22FA5FD6FF73C09DC0 /* PlaybackCoordinator+FadeLength.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlaybackCoordinator+FadeLength.swift"; sourceTree = "<group>"; };
 		B4FFEAAB7751EAD484B3F952 /* FadeFilterEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FadeFilterEngineTests.swift; sourceTree = "<group>"; };
+		CC06A4699FE1A1BFD34276DB /* StereoMeterLevels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StereoMeterLevels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1874,6 +1877,7 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				CC06A4699FE1A1BFD34276DB /* StereoMeterLevels.swift */,
 				5E883F22FA5FD6FF73C09DC0 /* PlaybackCoordinator+FadeLength.swift */,
 				6F42C09940321D6DFD54097C /* StreamingStemBuffer.swift */,
 				76EA958CE5FEDF6FD05D645C /* ShowJumpPlanner.swift */,
@@ -2260,6 +2264,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38688C4492384E1862D1C872 /* StereoMeterLevels.swift in Sources */,
 				88ACF21DF1EB8680A89AF05D /* PlaybackCoordinator+FadeLength.swift in Sources */,
 				09DC76E15B8C29AD9CF46339 /* TrackLevelMeter.swift in Sources */,
 				A77EAA117F013D411F85CFB9 /* TimelineEditHead.swift in Sources */,
@@ -2733,6 +2738,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC551B22FE8A1E88AB726945 /* StereoMeterLevels.swift in Sources */,
 				45C65BD1D3671D6CEA06D442 /* PlaybackCoordinator+FadeLength.swift in Sources */,
 				FBF14E162EFF615EBACEDA29 /* TrackLevelMeter.swift in Sources */,
 				1419939D9E2A2C2B0A10430F /* TimelineEditHead.swift in Sources */,

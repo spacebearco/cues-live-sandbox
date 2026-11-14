@@ -1,18 +1,30 @@
 import SwiftUI
 
-/// A track's level beside its header: the solid bar is RMS (how loud it sounds), the lighter bar
-/// above it reaches the sample peak, which turns yellow above -6 dB and red at full scale.
-/// Scale is -60…0 dB. Updates while the editor's meter timer runs.
+/// A track's stereo level beside its header: left and right bars. In each, the solid part is RMS
+/// (how loud it sounds) and the lighter part above reaches the sample peak, which turns yellow
+/// above -6 dB and red at full scale. Scale is -60…0 dB. Updates while the editor's meter
+/// timer runs.
 struct TrackLevelMeter: View {
     let trackID: UUID
     @Bindable private var audioEngine = AudioEngineManager.shared
 
-    static let width: CGFloat = 5
+    static let width: CGFloat = 7
     private static let floorDB: Float = -60
 
     var body: some View {
-        let peak = audioEngine.trackMeterLevels[trackID] ?? 0
-        let rms = audioEngine.trackRMSLevel(id: trackID)
+        // Reading the observed peak redraws this on every meter refresh.
+        _ = audioEngine.trackMeterLevels[trackID]
+        let levels = audioEngine.trackStereoLevels(id: trackID)
+        return HStack(spacing: 1) {
+            bar(peak: levels.peakLeft, rms: levels.rmsLeft)
+            bar(peak: levels.peakRight, rms: levels.rmsRight)
+        }
+        .frame(width: Self.width)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func bar(peak: Float, rms: Float) -> some View {
         GeometryReader { proxy in
             let height = proxy.size.height
             ZStack(alignment: .bottom) {
@@ -25,10 +37,7 @@ struct TrackLevelMeter: View {
                     .frame(height: height * Self.fraction(rms))
             }
         }
-        .frame(width: Self.width)
         .clipShape(RoundedRectangle(cornerRadius: 1.5))
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
     }
 
     private func peakColor(_ level: Float) -> Color {

@@ -12,8 +12,11 @@ final class PeakMeterHolder: @unchecked Sendable {
 
     private var peak: Float = 0
     private var updatedAt: TimeInterval = 0
-    private var meanSquare: Float = 0
-    private var meanSquareAt: TimeInterval = 0
+    private var stereoPeakLeft: Float = 0
+    private var stereoPeakRight: Float = 0
+    private var smoothedSquareLeft: Float = 0
+    private var smoothedSquareRight: Float = 0
+    private var stereoAt: TimeInterval = 0
     private let lock = OSAllocatedUnfairLock()
 
     func report(_ value: Float) {
@@ -23,27 +26,41 @@ final class PeakMeterHolder: @unchecked Sendable {
         }
     }
 
-    /// Render thread: one block's mean square, for the RMS reading.
-    func reportMeanSquare(_ value: Float) {
-        guard value.isFinite else { return }
+    /// Render thread: one block's per-side sample peaks and mean squares, for the stereo meters.
+    func reportStereo(peakLeft: Float, peakRight: Float, meanSquareLeft: Float, meanSquareRight: Float) {
+        guard peakLeft.isFinite, peakRight.isFinite, meanSquareLeft.isFinite, meanSquareRight.isFinite else { return }
         let now = ProcessInfo.processInfo.systemUptime
         lock.withLock {
-            meanSquare += (max(0, value) - meanSquare) * Self.rmsSmoothing
-            meanSquareAt = now
+            let fall = Self.decay(forIdle: Float(max(0, now - stereoAt)))
+            stereoPeakLeft = max(stereoPeakLeft * fall, peakLeft)
+            stereoPeakRight = max(stereoPeakRight * fall, peakRight)
+            smoothedSquareLeft += (max(0, meanSquareLeft) - smoothedSquareLeft) * Self.rmsSmoothing
+            smoothedSquareRight += (max(0, meanSquareRight) - smoothedSquareRight) * Self.rmsSmoothing
+            stereoAt = now
         }
     }
 
-    /// The smoothed RMS level (linear). It falls away once the track stops reporting, as a
-    /// muted or stopped track does.
-    func rms() -> Float {
+    /// Left and right peak (instant rise, falling at the meter's release rate) and smoothed
+    /// RMS. Everything falls away once the track stops reporting, as a muted or stopped track
+    /// does. Reading does not reset anything, so several meters can show the same track.
+    func stereoLevels() -> StereoMeterLevels {
         let now = ProcessInfo.processInfo.systemUptime
         return lock.withLock {
-            let idle = Float(max(0, now - meanSquareAt))
-            guard idle > 0.1 else { return meanSquare.squareRoot() }
-            let decay = pow(10, -Self.releaseDbPerSecond * (idle - 0.1) / 20)
-            let level = meanSquare.squareRoot() * decay
-            return level < 0.001 ? 0 : level
+            let idle = Float(max(0, now - stereoAt))
+            let peakFall = Self.decay(forIdle: idle)
+            let rmsFall = idle > 0.1 ? Self.decay(forIdle: idle - 0.1) : 1
+            func shown(_ level: Float) -> Float { level < 0.001 ? 0 : level }
+            return StereoMeterLevels(
+                peakLeft: shown(stereoPeakLeft * peakFall),
+                peakRight: shown(stereoPeakRight * peakFall),
+                rmsLeft: shown(smoothedSquareLeft.squareRoot() * rmsFall),
+                rmsRight: shown(smoothedSquareRight.squareRoot() * rmsFall)
+            )
         }
+    }
+
+    private static func decay(forIdle seconds: Float) -> Float {
+        pow(10, -releaseDbPerSecond * min(seconds, 5) / 20)
     }
 
     func consume() -> Float {
@@ -65,7 +82,10 @@ final class PeakMeterHolder: @unchecked Sendable {
     func reset() {
         lock.withLock {
             peak = 0
-            meanSquare = 0
+            stereoPeakLeft = 0
+            stereoPeakRight = 0
+            smoothedSquareLeft = 0
+            smoothedSquareRight = 0
         }
     }
 }

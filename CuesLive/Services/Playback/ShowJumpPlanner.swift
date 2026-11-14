@@ -21,31 +21,35 @@ enum SetlistPlayMode: String, CaseIterable, Identifiable {
 }
 
 /// When a cued section fires. A cue always jumps to the start of the chosen section; this
-/// picks the moment it happens.
+/// picks the moment it happens. A setting saved by an older build that no longer exists (Next
+/// Beat) falls back to End of Section.
 enum ShowQuantize: String, CaseIterable, Identifiable {
     /// When the section playing now ends.
     case section
     /// On the next bar line.
     case bar
-    /// On the next beat.
-    case beat
 
     var id: String { rawValue }
     var title: String {
         switch self {
         case .section: "End of Section"
         case .bar: "Next Bar"
-        case .beat: "Next Beat"
         }
     }
 
     static let storageKey = "setlistShowQuantize"
 }
 
-/// Plans when cued jumps fire on the bar or beat grid. Beats are quarter notes, as on the
-/// editor grid.
+/// Plans when cued jumps fire on the bar grid.
 enum ShowJumpPlanner {
-    /// The next bar or beat line after `now`; `nil` for `.section`, which fires at the end of the
+    struct Jump: Equatable {
+        /// Where playback lands: the start of the clicked bar.
+        let target: TimeInterval
+        /// The next bar line after now, where the jump happens.
+        let fireTime: TimeInterval
+    }
+
+    /// The next bar line after `now`; `nil` for `.section`, which fires at the end of the
     /// section playing (the setlist knows its sections).
     static func fireTime(
         after now: TimeInterval,
@@ -53,21 +57,11 @@ enum ShowJumpPlanner {
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange]
     ) -> TimeInterval? {
-        guard !tempoChanges.isEmpty else { return nil }
-        switch quantize {
-        case .bar: return nextBarStart(after: now, tempoChanges, timeSignatureChanges)
-        case .beat: return nextBeatStart(after: now, tempoChanges, timeSignatureChanges)
-        case .section: return nil
-        }
+        guard quantize == .bar, !tempoChanges.isEmpty else { return nil }
+        return barStart(containing: now, offsetBy: 1, tempoChanges, timeSignatureChanges)
     }
 
-    struct Jump: Equatable {
-        /// Where playback lands: the start of the clicked bar or beat.
-        let target: TimeInterval
-        /// The next bar or beat line after now, where the jump happens.
-        let fireTime: TimeInterval
-    }
-
+    /// For a song without sections: a jump to the clicked bar, on the next bar line.
     static func plan(
         clickedTime: TimeInterval,
         now: TimeInterval,
@@ -75,93 +69,37 @@ enum ShowJumpPlanner {
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange]
     ) -> Jump? {
-        guard !tempoChanges.isEmpty else { return nil }
-        switch quantize {
-        case .bar:
-            return Jump(
-                target: barStart(containing: clickedTime, tempoChanges, timeSignatureChanges),
-                fireTime: nextBarStart(after: now, tempoChanges, timeSignatureChanges)
-            )
-        case .beat:
-            return Jump(
-                target: beatStart(containing: clickedTime, tempoChanges, timeSignatureChanges),
-                fireTime: nextBeatStart(after: now, tempoChanges, timeSignatureChanges)
-            )
-        case .section:
-            return nil
-        }
+        guard let fireTime = fireTime(
+            after: now,
+            quantize: quantize,
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges
+        ) else { return nil }
+        return Jump(
+            target: barStart(containing: clickedTime, offsetBy: 0, tempoChanges, timeSignatureChanges),
+            fireTime: fireTime
+        )
     }
 
-    /// The grid line at or before `time`, for a jump made while stopped.
+    /// The bar line at or before `time`, for a jump made while stopped. `.section` keeps `time`.
     static func gridStart(
         containing time: TimeInterval,
         quantize: ShowQuantize,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange]
     ) -> TimeInterval {
-        guard !tempoChanges.isEmpty else { return max(0, time) }
-        switch quantize {
-        case .bar: return barStart(containing: time, tempoChanges, timeSignatureChanges)
-        case .beat: return beatStart(containing: time, tempoChanges, timeSignatureChanges)
-        case .section: return max(0, time)
-        }
+        guard quantize == .bar, !tempoChanges.isEmpty else { return max(0, time) }
+        return barStart(containing: time, offsetBy: 0, tempoChanges, timeSignatureChanges)
     }
 
+    /// Start of the bar `time` is in, or of the bar `offset` bars later.
     private static func barStart(
         containing time: TimeInterval,
+        offsetBy offset: Int,
         _ tempo: [TempoChange],
         _ meters: [TimeSignatureChange]
     ) -> TimeInterval {
         let measure = MeasureTiming.measureIndex(at: max(0, time), tempoChanges: tempo, timeSignatureChanges: meters)
-        return MeasureTiming.timeAtStartOfMeasure(measure, tempoChanges: tempo, timeSignatureChanges: meters)
-    }
-
-    private static func nextBarStart(
-        after time: TimeInterval,
-        _ tempo: [TempoChange],
-        _ meters: [TimeSignatureChange]
-    ) -> TimeInterval {
-        let measure = MeasureTiming.measureIndex(at: max(0, time), tempoChanges: tempo, timeSignatureChanges: meters)
-        return MeasureTiming.timeAtStartOfMeasure(measure + 1, tempoChanges: tempo, timeSignatureChanges: meters)
-    }
-
-    /// The bar, and the whole quarter notes into it, that `time` falls in.
-    private static func beatPosition(
-        _ time: TimeInterval,
-        _ tempo: [TempoChange],
-        _ meters: [TimeSignatureChange]
-    ) -> (measure: Int, beat: Double, beatsInMeasure: Double, timeline: TempoTimeline) {
-        let timeline = TempoTimeline(tempoChanges: tempo, timeSignatureChanges: meters)
-        let quarters = timeline.tick(atSeconds: max(0, time)) / Double(TempoChange.ticksPerQuarter)
-        let measure = MeasureTiming.measureIndex(atBeat: quarters, tempoChanges: tempo, timeSignatureChanges: meters)
-        let start = MeasureTiming.beatAtStartOfMeasure(measure, timeSignatureChanges: meters)
-        let signature = MeasureTiming.numeratorDenominatorForMeasure(measure, changes: meters)
-        let length = MeasureTiming.beatsPerMeasure(numerator: signature.numerator, denominator: signature.denominator)
-        // A hair of tolerance so a time sitting exactly on a beat counts as that beat.
-        return (measure, floor(quarters - start + 1e-6), length, timeline)
-    }
-
-    private static func beatStart(
-        containing time: TimeInterval,
-        _ tempo: [TempoChange],
-        _ meters: [TimeSignatureChange]
-    ) -> TimeInterval {
-        let position = beatPosition(time, tempo, meters)
-        let tick = TempoTimeline.tick(measure: position.measure, beatOffset: max(0, position.beat), timeSignatureChanges: meters)
-        return position.timeline.seconds(atTick: tick)
-    }
-
-    private static func nextBeatStart(
-        after time: TimeInterval,
-        _ tempo: [TempoChange],
-        _ meters: [TimeSignatureChange]
-    ) -> TimeInterval {
-        let position = beatPosition(time, tempo, meters)
-        let next = position.beat + 1
-        guard next < position.beatsInMeasure - 1e-6 else {
-            return MeasureTiming.timeAtStartOfMeasure(position.measure + 1, tempoChanges: tempo, timeSignatureChanges: meters)
-        }
-        let tick = TempoTimeline.tick(measure: position.measure, beatOffset: next, timeSignatureChanges: meters)
-        return position.timeline.seconds(atTick: tick)
+        return MeasureTiming.timeAtStartOfMeasure(measure + offset, tempoChanges: tempo, timeSignatureChanges: meters)
     }
 }

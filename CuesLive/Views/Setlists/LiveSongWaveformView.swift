@@ -14,6 +14,8 @@ struct LiveSongWaveformView: View {
     var showsMissingMediaWarning = false
     let onSeek: (TimeInterval) -> Void
     let onCueSection: (SongSection) -> Void
+    /// A click on a section's name label: play that section from its start.
+    var onPlaySection: ((SongSection) -> Void)?
     /// Setlist position of this lane. When set, each section can be key- or MIDI-mapped.
     var playbackIndex: Int? = nil
 
@@ -50,6 +52,30 @@ struct LiveSongWaveformView: View {
                 window: window,
                 onSeek: onSeek
             ))
+            // Above the click gesture, so a label click plays its section and is not also
+            // read as a click on the waveform under it.
+            .overlay(alignment: .topLeading) {
+                if isInteractive, let onPlaySection, !mapping.showsLiveHighlights {
+                    sectionLabelTargets(onPlaySection)
+                }
+            }
+    }
+
+    /// A click on a section's marker in the ribbon plays that section.
+    private func sectionLabelTargets(_ onPlaySection: @escaping (SongSection) -> Void) -> some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(sections) { section in
+                let startX = window.x(for: section.timelineStartSeconds, width: contentWidth)
+                let endX = window.x(for: section.timelineEndSeconds, width: contentWidth)
+                Color.clear
+                    .frame(width: max(0, endX - startX), height: ribbonHeight)
+                    .contentShape(Rectangle())
+                    .onTapGesture { onPlaySection(section) }
+                    .help("Play \(section.name)")
+                    .offset(x: startX)
+            }
+        }
+        .frame(width: contentWidth, height: waveformHeight, alignment: .topLeading)
     }
 
     @ViewBuilder

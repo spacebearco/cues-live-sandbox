@@ -2,10 +2,10 @@ import XCTest
 @testable import CuesLive
 
 final class MixerFaderScaleTests: XCTestCase {
-    func testMarkersAreSixDecibelStepsThroughPlusSix() {
+    func testMarkersAreTenDecibelStepsThroughPlusTen() {
         XCTAssertEqual(
             MixerFaderScale.markerDecibels,
-            [6, 0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60]
+            [10, 0, -10, -20, -30, -40, -50, -60]
         )
     }
 
@@ -15,7 +15,7 @@ final class MixerFaderScaleTests: XCTestCase {
         XCTAssertEqual(unity, zero, accuracy: 0.000_1)
     }
 
-    func testTopOfFaderIsPlusSixDecibels() {
+    func testTopOfFaderIsPlusTenDecibels() {
         let gain = MixerFaderScale.linearGain(forNormalizedPosition: 0)
         XCTAssertEqual(gain, pow(10, MixerFaderScale.maxBoostDB / 20), accuracy: 0.000_1)
         XCTAssertEqual(MixerFaderScale.decibels(forLinearGain: gain), MixerFaderScale.maxBoostDB, accuracy: 0.001)

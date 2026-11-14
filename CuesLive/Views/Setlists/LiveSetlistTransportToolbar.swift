@@ -114,7 +114,8 @@ private struct LiveToolbarNowPlaying: View {
     }
 }
 
-/// Opens the song editor on the playing song. Disabled while nothing is loaded.
+/// Opens the song editor on the playing song (Command-E). Disabled while nothing is loaded,
+/// and hidden in Show mode, where editing is locked.
 private struct LiveToolbarEditorToggle: View {
     let coordinator: PlaybackCoordinator
     let isOn: Bool
@@ -122,10 +123,13 @@ private struct LiveToolbarEditorToggle: View {
     @AppStorage(SetlistPlayMode.storageKey) private var playMode = SetlistPlayMode.defaultMode
 
     var body: some View {
-        Toggle(isOn: Binding(get: { isOn }, set: { _ in action() })) {
-            Label("Song Editor", systemImage: "rectangle.badge.plus")
+        if playMode == .edit {
+            Toggle(isOn: Binding(get: { isOn }, set: { _ in action() })) {
+                Label("Song Editor", systemImage: "rectangle.badge.plus")
+            }
+            .disabled(coordinator.currentSong == nil)
+            .keyboardShortcut("e", modifiers: .command)
+            .help("Edit the playing song (⌘E)")
         }
-        .disabled(coordinator.currentSong == nil || playMode == .show)
-        .help(playMode == .show ? SetlistPlayMode.lockedExplanation : "Edit the playing song")
     }
 }

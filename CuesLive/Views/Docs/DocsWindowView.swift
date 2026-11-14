@@ -395,6 +395,7 @@ private struct KeyboardShortcutsDocContent: View {
                 ("New setlist", "⌘N"),
                 ("Open setlist", "⌘O"),
                 ("Save", "⌘S"),
+                ("Open Song Editor (Edit mode)", "⌘E"),
                 ("Save As", "⇧⌘S"),
                 ("Export Setlist Folder", "⇧⌘E"),
             ])

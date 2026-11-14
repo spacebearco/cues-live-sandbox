@@ -29,15 +29,16 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         }
 
         ToolbarItem(placement: .automatic) {
-            SetlistModeControls()
-        }
-
-        ToolbarItem(placement: .automatic) {
             InputMappingToolbarButton()
         }
 
         ToolbarItem(placement: .automatic) {
             settingsButton
+        }
+
+        // Last, so the mode reads from the far top-right corner.
+        ToolbarItem(placement: .automatic) {
+            SetlistModeControls()
         }
         #else
         ToolbarItem(placement: .topBarLeading) {

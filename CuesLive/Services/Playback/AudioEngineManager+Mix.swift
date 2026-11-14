@@ -28,9 +28,18 @@ extension AudioEngineManager {
         applyGroupMix(groupMixSnapshot.replacingVolume(groupID: groupID, volume: volume))
     }
 
-    /// A track's smoothed RMS (linear), beside its peak in `trackMeterLevels`.
-    func trackRMSLevel(id: UUID) -> Float {
-        tracks[id]?.memoryPlayer.rmsLevel() ?? 0
+    /// A track's left and right peak and RMS.
+    func trackStereoLevels(id: UUID) -> StereoMeterLevels {
+        tracks[id]?.memoryPlayer.stereoLevels() ?? .silent
+    }
+
+    /// The loudest left and right readings across a group's tracks (`nil` is ungrouped).
+    func groupStereoLevels(for groupID: UUID?) -> StereoMeterLevels {
+        var levels = StereoMeterLevels.silent
+        for track in tracks.values where track.groupID == groupID {
+            levels = levels.merged(with: track.memoryPlayer.stereoLevels())
+        }
+        return levels
     }
 
     func groupMeterLevel(for groupID: UUID?) -> Float {

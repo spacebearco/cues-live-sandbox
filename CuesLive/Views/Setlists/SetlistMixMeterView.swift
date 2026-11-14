@@ -45,17 +45,24 @@ struct SetlistMixMeterView: View {
         }
     }
 
+    /// Lights when a sample reaches full scale. Clicking it resets the meter.
     private func clipLight(_ hasClipped: Bool) -> some View {
-        Text("CLIP")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(hasClipped ? Color.white : AppColors.textTertiary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 2)
-            .background(
-                Capsule()
-                    .fill(hasClipped ? AppColors.Mixer.meterOver : AppColors.surface)
-            )
-            .help("A sample reached full scale. Reset clears it.")
+        Button {
+            model.resetMeasurement()
+        } label: {
+            Text("CLIP")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(hasClipped ? Color.white : AppColors.textTertiary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule()
+                        .fill(hasClipped ? AppColors.Mixer.meterOver : AppColors.surface)
+                )
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help("A sample reached full scale. Click to reset.")
     }
 
     private func readingsTable(_ readings: MixMeterReadings) -> some View {

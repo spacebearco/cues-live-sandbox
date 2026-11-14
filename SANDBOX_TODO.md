@@ -2,12 +2,8 @@
 
 Josh's open notes (2026-11-13), grouped into batches. Work one batch per session: make all the
 changes, then build Mac and iOS and run the full tests once, deliver one numbered build, and log
-it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 18 (batches 1
+it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 19 (batches 1
 and 2 done).
-
-## Left over from batch 2
-
-- Fix the spacing of the title at the top. Needs a screenshot from Josh.
 
 ## Batch 3 – Features and glitches
 

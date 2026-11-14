@@ -14,6 +14,16 @@ Newest first.
 
 ---
 
+## Build 19 – Toolbar title spacing
+
+Josh sent a screenshot: the playing song's title in the toolbar sat tight against the transport
+buttons, and the "Up Next" line was centred under it, so the two lines started at different
+places. The two lines now share a left edge, with a little more space between them and a gap
+after the transport (`LiveToolbarSongTitle.swift`, `LiveSetlistTransportToolbar.swift`).
+This was a guess at what looked off; view-only, no tests.
+
+---
+
 ## Build 18 – Batch 2 setlist layout
 
 From Josh's notes of 2026-11-13 (`SANDBOX_TODO.md`, batch 2). One build for the whole batch.
@@ -41,8 +51,6 @@ This reworks layout from Blake's "Move to browser file UI" commit; the pieces ar
 - **Inline editor hides the setlists too.** When a song's editor is pushed over the setlist
   (Edit from a row menu while the editor window is closed), the setlists sidebar folds away
   with the song browser and comes back when the editor closes.
-
-Not done: **title spacing at the top.** Needs a screenshot from Josh showing what is off.
 
 Files: `LivePlaybackView.swift`, `LivePlaybackView+Sidebar.swift`, `LiveSongBrowser.swift`,
 `LiveSongBrowserSplitLayout.swift` (new), `LiveSetlistLaneHeader.swift` (new),

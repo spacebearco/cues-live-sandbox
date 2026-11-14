@@ -21,15 +21,32 @@ struct OutputRoutingSnapshot {
     }
 
     /// Everything that is heard, sent to one destination instead: Me Time. Groups routed to
-    /// No Output (timecode, by default) stay silent.
-    func routingEverything(to destination: OutputDestination) -> OutputRoutingSnapshot {
+    /// No Output (timecode, by default) stay silent. `output` names another device to play
+    /// from; `nil` stays on this one.
+    func routingEverything(
+        to destination: OutputDestination,
+        on output: AudioOutputDevice? = nil
+    ) -> OutputRoutingSnapshot {
         OutputRoutingSnapshot(
-            deviceUID: deviceUID,
+            deviceUID: output?.id ?? deviceUID,
             routesByGroupID: routesByGroupID.mapValues { $0 == .none ? .none : destination },
             ungroupedDestination: ungroupedDestination == .none ? .none : destination,
-            channelCount: channelCount,
+            channelCount: max(output?.channelCount ?? channelCount, 2),
             guideGroupID: guideGroupID,
             fallbackDestination: destination
+        )
+    }
+
+    /// The same routing with the device named, so an engine that was moved to another device
+    /// (Me Time) binds back to this one.
+    func onDevice(_ uid: String?) -> OutputRoutingSnapshot {
+        OutputRoutingSnapshot(
+            deviceUID: uid,
+            routesByGroupID: routesByGroupID,
+            ungroupedDestination: ungroupedDestination,
+            channelCount: channelCount,
+            guideGroupID: guideGroupID,
+            fallbackDestination: fallbackDestination
         )
     }
 }

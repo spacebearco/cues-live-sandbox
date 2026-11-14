@@ -14,6 +14,37 @@ Newest first.
 
 ---
 
+## Build 22 – Me Time on another audio device
+
+Josh: Me Time should route all audio "out a secondary dedicated output either on the same
+audio device or different". Build 20 did the same device; this adds another device.
+
+- **Right-click the Me Time button** to pick the device (Same Device as the Show, or any other
+  output) and the output pair on it. Picking another device starts on its outputs 1-2; the
+  show's own device starts on 3-4.
+- **How it works:** all the audio goes to Me Time, so nothing has to stay on the show's device.
+  While Me Time is on, the routing snapshot names the Me Time device (`routingEverything(to:on:)`)
+  and the engine binds to it the same way it does when the device is changed in Settings.
+  Turning Me Time off hands back the saved routing on the show's device. No aggregate device
+  and no second engine.
+- If the Me Time device is unplugged, Me Time stays on the show's device and uses its saved
+  pair (or its last pair).
+- With no device selected in Settings (system default) and a Me Time device set, the routing
+  now names the default device, so the engine binds back to it after Me Time
+  (`AudioOutputDeviceService.defaultOutputDeviceUID`, `OutputRoutingSnapshot.onDevice`).
+
+Files: `MeTimeSettings.swift`, `MeTimeToolbarToggle.swift`, `OutputRoutingStore.swift`,
+`AudioOutputDeviceService.swift`, `LivePlaybackView+LiveExtras.swift`.
+
+Tests: `OutputRoutingManagerTests.testMeTimeOnAnotherDeviceMovesTheWholeMixThere`. Full suite
+passes; Mac and iOS build clean. Not tried with real hardware.
+
+Notes for Blake: switching reloads the song's routing, so there is a short dropout each way,
+longer than on the same device because the engine changes device. Different sample rates on
+the two devices are left to the engine's normal device handling.
+
+---
+
 ## Build 21 – Setlist faders follow the editor
 
 Josh: "faders follow the volume within the edit window for each song". Build 20 kept a

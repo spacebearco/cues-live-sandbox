@@ -22,6 +22,15 @@ enum AudioOutputDeviceService {
         #endif
     }
 
+    /// The system's default output device, for returning an engine to it by name.
+    static func defaultOutputDeviceUID() -> String? {
+        #if os(macOS)
+        return defaultOutputDeviceID().flatMap(deviceUID(for:))
+        #else
+        return nil
+        #endif
+    }
+
     /// Binds the engine's output unit to a device (macOS) without changing the
     /// system-wide default output. Falls back to the Core Audio property API
     /// when `setDeviceID` is unavailable.

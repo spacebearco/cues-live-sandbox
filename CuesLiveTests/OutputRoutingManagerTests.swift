@@ -114,6 +114,40 @@ final class OutputRoutingManagerTests: XCTestCase {
         XCTAssertTrue(snapshot.hasNonDefaultRouting)
     }
 
+    func testMeTimeOnAnotherDeviceMovesTheWholeMixThere() {
+        let suite = "MeTimeDeviceTests"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let phones = AudioOutputDevice(id: "phones", name: "Headphones", channelCount: 2)
+        defaults.set("phones", forKey: MeTimeSettings.deviceKey)
+        defaults.set(1, forKey: MeTimeSettings.startChannelKey)
+
+        let output = MeTimeSettings.output(
+            mainDeviceUID: "interface", mainChannelCount: 8, devices: [phones], defaults: defaults
+        )
+        XCTAssertEqual(output, MeTimeSettings.Output(device: phones, destination: .stereoPair(startChannel: 1)))
+
+        let group = UUID()
+        let snapshot = OutputRoutingSnapshot(
+            deviceUID: "interface",
+            routesByGroupID: [group: .stereoPair(startChannel: 5)],
+            ungroupedDestination: .defaultDestination,
+            channelCount: 8
+        ).routingEverything(to: output.destination, on: output.device)
+        XCTAssertEqual(snapshot.deviceUID, "phones")
+        XCTAssertEqual(snapshot.channelCount, 2)
+        XCTAssertEqual(OutputRoutingStore.destination(for: group, snapshot: snapshot), .stereoPair(startChannel: 1))
+
+        // Unplugged, or the show's own device: stay on the show's device.
+        let missing = MeTimeSettings.output(mainDeviceUID: "interface", mainChannelCount: 8, devices: [], defaults: defaults)
+        XCTAssertNil(missing.device)
+        let same = MeTimeSettings.output(mainDeviceUID: "phones", mainChannelCount: 2, devices: [phones], defaults: defaults)
+        XCTAssertNil(same.device)
+        XCTAssertTrue(MeTimeSettings.usesAnotherDevice(mainDeviceUID: "interface", defaults: defaults))
+        XCTAssertFalse(MeTimeSettings.usesAnotherDevice(mainDeviceUID: "phones", defaults: defaults))
+    }
+
     func testMeTimeOutputFallsBackToTheLastPairOnASmallDevice() {
         let suite = "MeTimeSettingsTests"
         let defaults = UserDefaults(suiteName: suite)!

@@ -32,12 +32,21 @@ extension LivePlaybackView {
 
     /// The saved routing, or everything on the Me Time output while Me Time is on.
     func liveRoutingSnapshot() -> OutputRoutingSnapshot {
-        let channelCount = AudioOutputDeviceService.channelCount(
-            for: OutputRoutingStore.config(in: modelContext).selectedDeviceUID
-        )
+        let mainUID = OutputRoutingStore.config(in: modelContext).selectedDeviceUID
+        let channelCount = AudioOutputDeviceService.channelCount(for: mainUID)
         let snapshot = OutputRoutingStore.snapshot(in: modelContext, channelCount: channelCount)
-        guard isMeTimeOn, playMode == .edit else { return snapshot }
-        return snapshot.routingEverything(to: MeTimeSettings.destination(channelCount: channelCount))
+        guard isMeTimeOn, playMode == .edit else {
+            // With no device selected the engine follows the system default, and would stay on
+            // the Me Time device after a visit there. Name the default so it binds back.
+            guard mainUID == nil, MeTimeSettings.usesAnotherDevice(mainDeviceUID: mainUID) else { return snapshot }
+            return snapshot.onDevice(AudioOutputDeviceService.defaultOutputDeviceUID())
+        }
+        let output = MeTimeSettings.output(
+            mainDeviceUID: mainUID,
+            mainChannelCount: channelCount,
+            devices: AudioOutputDeviceService.availableDevices()
+        )
+        return snapshot.routingEverything(to: output.destination, on: output.device)
     }
 
     func toggleMeTime() {

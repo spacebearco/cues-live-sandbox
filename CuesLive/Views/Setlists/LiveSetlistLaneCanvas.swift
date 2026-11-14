@@ -33,7 +33,6 @@ struct LiveSetlistLaneCanvas: Equatable {
     var songs: [Song] = []
     /// Cued section of the current song.
     var cuedSectionID: UUID?
-    var cueFlashPhase = false
 
     func scene(in environment: EnvironmentValues) -> LiveSetlistLanePainter.Scene {
         func resolved(_ color: Color) -> CGColor {
@@ -59,7 +58,6 @@ struct LiveSetlistLaneCanvas: Equatable {
                     isCurrent: song.isCurrent
                 )
             },
-            cueFlashPhase: cueFlashPhase,
             backgroundColor: resolved(AppColors.LiveWaveform.background),
             separatorColor: resolved(AppColors.separator),
             markerColor: resolved(AppColors.LiveWaveform.sectionMarker),

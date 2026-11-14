@@ -13,9 +13,8 @@ struct ToolbarTransportControls: View {
     let onPlayPause: () -> Void
     let onToggleFade: () -> Void
     let onToggleLoop: () -> Void
-    /// Setlist-only extras. The editor leaves them out and shows neither button.
+    /// Setlist-only. The editor leaves it out and shows no filter sweep button.
     var filterSweep: FilterSweep?
-    var onPanic: (() -> Void)?
 
     /// The low-pass filter sweep toggle's state and action.
     struct FilterSweep {
@@ -47,15 +46,6 @@ struct ToolbarTransportControls: View {
             .disabled(!canLoop)
             .help("Loop Section")
             .mappableLiveControl(.loop)
-
-            if let onPanic {
-                Button(action: onPanic) {
-                    Label("Panic", systemImage: "arrow.uturn.backward.circle.fill")
-                }
-                .foregroundStyle(AppColors.transportPanic)
-                .help("Panic: back to one bar before this section")
-                .mappableLiveControl(.panic)
-            }
         }
         .labelStyle(.iconOnly)
         .toggleStyle(.button)

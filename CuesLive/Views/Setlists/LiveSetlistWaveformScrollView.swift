@@ -12,7 +12,6 @@ struct LiveSetlistWaveformScrollView: View {
     /// Observed while stopped/paused so the playhead moves on seek/section tap.
     var idlePlayheadTime: TimeInterval? = nil
     let cuedSectionID: UUID?
-    let cueFlashPhase: Bool
     let onSeek: (TimeInterval) -> Void
     let onCueSection: (SongSection) -> Void
     /// A click on a section's name label in the playing song.
@@ -53,8 +52,7 @@ struct LiveSetlistWaveformScrollView: View {
                     isCurrent: playbackIndex == currentPlaybackIndex
                 )
             },
-            cuedSectionID: cuedSectionID,
-            cueFlashPhase: cueFlashPhase
+            cuedSectionID: cuedSectionID
         )
     }
 

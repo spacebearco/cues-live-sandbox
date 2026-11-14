@@ -34,8 +34,7 @@ struct SetlistSectionGridView: View {
                 SetlistSectionCard(
                     section: section,
                     playheadTime: time,
-                    isCued: isCurrent && playback.cuedSectionID == section.id,
-                    cueFlashPhase: playback.cueFlashPhase
+                    isCued: isCurrent && playback.cuedSectionID == section.id
                 )
                 .contentShape(RoundedRectangle(cornerRadius: SetlistSectionCard.cornerRadius, style: .continuous))
                 .onTapGesture(count: selectClickCount) {
@@ -62,7 +61,6 @@ private struct SetlistSectionCard: View {
     /// Nil for songs that aren't current, which show no progress.
     let playheadTime: TimeInterval?
     let isCued: Bool
-    let cueFlashPhase: Bool
 
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
@@ -137,7 +135,10 @@ private struct SetlistSectionCard: View {
     @ViewBuilder
     private var border: some View {
         if isCued {
-            shape.strokeBorder(AppColors.accent.opacity(cueFlashPhase ? 1 : 0.35), lineWidth: 2)
+            // Blinks on its own clock, so nothing above the row re-renders for it.
+            TimelineView(.periodic(from: .now, by: CueFlash.interval / 2)) { _ in
+                shape.strokeBorder(AppColors.accent.opacity(CueFlash.isBright ? 1 : 0.35), lineWidth: 2)
+            }
         } else {
             shape.strokeBorder(isActive ? AppColors.Live.sectionCardBorderActive : AppColors.Live.sectionCardBorder, lineWidth: 1)
         }

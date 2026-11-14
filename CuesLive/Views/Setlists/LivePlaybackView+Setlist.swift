@@ -105,7 +105,6 @@ extension LivePlaybackView {
             // Only observe clock time while idle, so playback doesn't rebuild the list every tick.
             idlePlayheadTime: playbackClock.isPlaying ? nil : playbackClock.currentTime,
             cuedSectionID: cuedSectionID,
-            cueFlashPhase: cueFlashPhase,
             selectSection: selectSection(songIndex:section:)
         )
     }

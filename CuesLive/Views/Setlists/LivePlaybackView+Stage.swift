@@ -73,8 +73,12 @@ extension LivePlaybackView {
         mixerDetent = mixerDetent == .hidden ? .visible : .hidden
     }
 
+    /// Fades out, or back in. A fade-in re-enters a section: playback jumps a bar or two
+    /// ahead of it (`FadeButtonSettings.entryBars`) and the mix sweeps in over the run-up, so
+    /// the band lands on the section's downbeat.
     func toggleGroupMixFade() {
-        groupMixFade.toggleFade(context: modelContext, duration: coordinator.fadeButtonDuration) {
+        let duration = (groupMixFade.isFadedOut ? enterSectionForFadeIn() : nil) ?? coordinator.fadeButtonDuration
+        groupMixFade.toggleFade(context: modelContext, duration: duration) {
             coordinator.updateGroupMix(context: modelContext, persist: false)
         } onComplete: {
             coordinator.updateGroupMix(context: modelContext)
@@ -182,7 +186,6 @@ extension LivePlaybackView {
                 // rebuilding the setlist on every playhead tick during playback.
                 idlePlayheadTime: playbackClock.isPlaying ? nil : playbackClock.currentTime,
                 cuedSectionID: cuedSectionID,
-                cueFlashPhase: cueFlashPhase,
                 onSeek: handleWaveformClick(at:),
                 onCueSection: cueSection,
                 onPlaySection: playSection,

@@ -32,7 +32,6 @@ final class LiveSetlistLanePainter {
 
     struct Scene: Equatable {
         var songs: [Song] = []
-        var cueFlashPhase = false
         var backgroundColor = CGColor(gray: 0, alpha: 1)
         var separatorColor = CGColor(gray: 1, alpha: 0.1)
         /// Section markers in songs other than the current one.
@@ -53,6 +52,8 @@ final class LiveSetlistLanePainter {
         var lanes: [Int: CGRect] = [:]
         /// Strip x of the playhead, snapped to device pixels.
         var playheadX: CGFloat?
+        /// The bright half of a cued section's blink (`CueFlash`). Stays false with nothing cued.
+        var isCueBright = false
     }
 
     /// Everything that decides a song's columns.
@@ -66,6 +67,7 @@ final class LiveSetlistLanePainter {
     static let gridInset: CGFloat = 8
 
     private(set) var scene = Scene()
+    private var hasCuedBand = false
     private(set) var layout = Layout()
     /// Device pixels per point.
     var scale: CGFloat = 2
@@ -83,6 +85,7 @@ final class LiveSetlistLanePainter {
     func update(_ scene: Scene) -> Bool {
         guard scene != self.scene else { return false }
         self.scene = scene
+        hasCuedBand = scene.songs.contains { $0.bands.contains(where: \.isCued) }
         requestOverviews()
         return true
     }
@@ -96,7 +99,8 @@ final class LiveSetlistLanePainter {
         let layout = Layout(
             origin: origin,
             lanes: lanes,
-            playheadX: model.playheadX.map { ($0 * scale).rounded() / scale }
+            playheadX: model.playheadX.map { ($0 * scale).rounded() / scale },
+            isCueBright: hasCuedBand && CueFlash.isBright
         )
         guard layout != self.layout else { return false }
         self.layout = layout

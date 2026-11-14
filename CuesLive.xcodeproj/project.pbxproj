@@ -873,6 +873,8 @@
 		78DFED88CB2E8B33086D9BC1 /* LiveGroupMixerView+SongLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B207E3D8F3D528EA190CE719 /* LiveGroupMixerView+SongLink.swift */; };
 		0C7435FC16B707A5118FBFD5 /* LiveGroupMixerView+SongLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = B207E3D8F3D528EA190CE719 /* LiveGroupMixerView+SongLink.swift */; };
 		12D6C88663AECA4B17530622 /* GroupFaderLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9491E2FDEFA664C2C942C24D /* GroupFaderLinkTests.swift */; };
+		2FE85583865AD76B11F77BEB /* CueFlash.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDEB9340F59E2594654E29F7 /* CueFlash.swift */; };
+		C227AFA07445F143D53F0447 /* CueFlash.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDEB9340F59E2594654E29F7 /* CueFlash.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1368,6 +1370,7 @@
 		F5711A0037EEB30A93190290 /* GroupFaderLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupFaderLink.swift; sourceTree = "<group>"; };
 		B207E3D8F3D528EA190CE719 /* LiveGroupMixerView+SongLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LiveGroupMixerView+SongLink.swift"; sourceTree = "<group>"; };
 		9491E2FDEFA664C2C942C24D /* GroupFaderLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupFaderLinkTests.swift; sourceTree = "<group>"; };
+		BDEB9340F59E2594654E29F7 /* CueFlash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueFlash.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1594,6 +1597,7 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				BDEB9340F59E2594654E29F7 /* CueFlash.swift */,
 				B207E3D8F3D528EA190CE719 /* LiveGroupMixerView+SongLink.swift */,
 				A641B5F96E0B3E8BFE5D0E6C /* MeTimeToolbarToggle.swift */,
 				406FC724E1954510FFF0F177 /* LiveSetlistLanePainter+Header.swift */,
@@ -2291,6 +2295,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2FE85583865AD76B11F77BEB /* CueFlash.swift in Sources */,
 				78DFED88CB2E8B33086D9BC1 /* LiveGroupMixerView+SongLink.swift in Sources */,
 				C488800791F114CE118B7A1E /* GroupFaderLink.swift in Sources */,
 				EB78632BEB8BB4A53E41EDF7 /* MeTimeToolbarToggle.swift in Sources */,
@@ -2772,6 +2777,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C227AFA07445F143D53F0447 /* CueFlash.swift in Sources */,
 				0C7435FC16B707A5118FBFD5 /* LiveGroupMixerView+SongLink.swift in Sources */,
 				4EA11F15C54CA2DF8C342FA6 /* GroupFaderLink.swift in Sources */,
 				C1CF43368BE7B080199E2082 /* MeTimeToolbarToggle.swift in Sources */,

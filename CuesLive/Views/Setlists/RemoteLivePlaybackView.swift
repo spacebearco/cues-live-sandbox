@@ -5,7 +5,6 @@ struct RemoteLivePlaybackView: View {
     @Environment(InputMappingController.self) private var mapping
 
     @State private var mixerVisible = false
-    @State private var cueFlashPhase = false
     @State private var showingSettings = false
     @State private var showingSongLibrary = SongLibraryPanePreference.initialVisibility
     @State private var showingAddHeaderSheet = false
@@ -123,16 +122,6 @@ struct RemoteLivePlaybackView: View {
         .appBackground(.primary)
         .liveInputMappingSession { action in
             handleMappedLiveAction(action)
-        }
-        .task(id: state.cuedSectionID) {
-            guard state.cuedSectionID != nil else {
-                cueFlashPhase = false
-                return
-            }
-            while !Task.isCancelled, client.state.cuedSectionID != nil {
-                cueFlashPhase.toggle()
-                try? await Task.sleep(nanoseconds: 400_000_000)
-            }
         }
         .sheet(isPresented: $showingSettings) {
             #if os(iOS)
@@ -279,8 +268,8 @@ struct RemoteLivePlaybackView: View {
             client.send(.toggleFade)
         case .loop:
             client.send(.toggleSectionLoop)
-        case .panic, .filterSweep:
-            // Host-only controls; the remote has no command for them.
+        case .filterSweep:
+            // Host-only control; the remote has no command for it.
             break
         case .goToSong(let index):
             client.send(.goToSong(index: index, autoPlay: state.isAudiblePlaying))
@@ -336,7 +325,6 @@ struct RemoteLivePlaybackView: View {
             isPlayingProvider: { client.state.isPlaying },
             idlePlayheadTime: state.isPlaying ? nil : state.currentTime,
             cuedSectionID: state.cuedSectionID,
-            cueFlashPhase: cueFlashPhase,
             onSeek: { client.send(.seek($0)) },
             onCueSection: { client.send(.cueSection(sectionID: $0.id)) },
             onSelectSong: { index, startTime in
@@ -433,7 +421,6 @@ struct RemoteLivePlaybackView: View {
             isPlaying: state.isPlaying,
             idlePlayheadTime: state.isPlaying ? nil : state.currentTime,
             cuedSectionID: state.cuedSectionID,
-            cueFlashPhase: cueFlashPhase,
             selectSection: selectSection(songIndex:section:)
         )
     }

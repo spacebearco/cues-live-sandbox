@@ -18,7 +18,7 @@ extension EditView {
             toggleGroupMixFade()
         case .loop:
             toggleLoop(at: audioEngine.isPlaying ? audioEngine.currentTime : playbackStart)
-        case .goToSong, .goToSection, .panic, .filterSweep:
+        case .goToSong, .goToSection, .filterSweep:
             break
         }
     }

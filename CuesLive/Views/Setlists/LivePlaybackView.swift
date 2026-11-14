@@ -36,7 +36,6 @@ struct LivePlaybackView: View {
     @State var cueTargetTime: TimeInterval?
     @AppStorage(SetlistPlayMode.storageKey) var playMode: SetlistPlayMode = SetlistPlayMode.defaultMode
     @AppStorage(ShowQuantize.storageKey) var showQuantize: ShowQuantize = .section
-    @State var cueFlashPhase = false
     @State var sectionLoop = SectionLoopController()
     @State var groupMixFade = GroupMixFadeController()
     /// Edit mode only: all audio goes to the Me Time output while this is on.
@@ -323,17 +322,6 @@ struct LivePlaybackView: View {
         content: Content
     ) -> some View {
         content
-            .task(id: cuedSectionID) {
-                guard cuedSectionID != nil else {
-                    cueFlashPhase = false
-                    return
-                }
-                cueFlashPhase = true
-                while !Task.isCancelled, cuedSectionID != nil {
-                    try? await Task.sleep(for: .milliseconds(350))
-                    cueFlashPhase.toggle()
-                }
-            }
             .onChange(of: coordinator.currentSong?.id) { _, songID in
                 SetlistEditorLink.shared.activeSongDidChange(to: songID)
                 clearMarkerCue()
@@ -516,7 +504,6 @@ struct LivePlaybackView: View {
             onToggleWaveform: toggleWaveform,
             onToggleMixer: toggleMixer,
             onToggleEditor: toggleSongEditor,
-            onPanic: panicToSectionStart,
             onToggleFilterSweep: toggleFilterSweep,
             onToggleMeTime: toggleMeTime,
             onMeTimeOutputChanged: { if isMeTimeOn { coordinator.applyOutputRouting() } }

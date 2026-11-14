@@ -27,7 +27,7 @@ extension LiveSetlistLanePainter {
             context.fill(ahead.intersection(shown))
             if band.isCued {
                 let inset = Self.cueOutlineWidth
-                context.setStrokeColor(CGColor(gray: 1, alpha: scene.cueFlashPhase ? 1 : 0.35))
+                context.setStrokeColor(CGColor(gray: 1, alpha: layout.isCueBright ? 1 : 0.35))
                 context.setLineWidth(Self.cueOutlineWidth)
                 context.stroke(marker.insetBy(dx: inset, dy: inset))
             }

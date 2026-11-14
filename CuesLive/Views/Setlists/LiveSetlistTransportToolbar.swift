@@ -18,7 +18,6 @@ struct LiveSetlistTransportToolbarContent: ToolbarContent {
     let onToggleWaveform: () -> Void
     let onToggleMixer: () -> Void
     let onToggleEditor: () -> Void
-    var onPanic: () -> Void = {}
     var onToggleFilterSweep: () -> Void = {}
     var onToggleMeTime: () -> Void = {}
     var onMeTimeOutputChanged: () -> Void = {}
@@ -60,7 +59,6 @@ struct LiveSetlistTransportToolbarContent: ToolbarContent {
                 onStop: onStop,
                 onToggleLoop: onToggleLoop,
                 onToggleFade: onToggleFade,
-                onPanic: onPanic,
                 onToggleFilterSweep: onToggleFilterSweep
             )
         }
@@ -90,7 +88,6 @@ private struct LiveToolbarTransportControls: View {
     let onStop: () -> Void
     let onToggleLoop: () -> Void
     let onToggleFade: () -> Void
-    let onPanic: () -> Void
     let onToggleFilterSweep: () -> Void
 
     var body: some View {
@@ -109,8 +106,7 @@ private struct LiveToolbarTransportControls: View {
                 isOn: groupMixFade.isFilterSwept,
                 isEnabled: !groupMixFade.isFadedOut && !groupMixFade.isFading,
                 toggle: onToggleFilterSweep
-            ),
-            onPanic: onPanic
+            )
         )
     }
 

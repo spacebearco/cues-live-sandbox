@@ -117,7 +117,10 @@ final class InputMappingStore {
         guard let data = defaults.data(forKey: Keys.mappings) else {
             return defaultMappings
         }
-        return (try? JSONDecoder().decode([InputMapping].self, from: data)) ?? []
+        // One at a time, so a mapping for an action this build no longer has is dropped
+        // without taking the rest with it.
+        let entries = (try? JSONDecoder().decode([LossyMapping].self, from: data)) ?? []
+        return entries.compactMap(\.mapping)
     }
 
     static var defaultMappings: [InputMapping] {
@@ -127,5 +130,14 @@ final class InputMappingStore {
             InputMapping(action: .fade, key: .unmodified(keyCode: 3, character: "f", keyName: "F")),
             InputMapping(action: .loop, key: .unmodified(keyCode: 37, character: "l", keyName: "L")),
         ]
+    }
+}
+
+/// Decodes to `nil` instead of failing when a saved mapping can't be read.
+private struct LossyMapping: Decodable {
+    let mapping: InputMapping?
+
+    init(from decoder: Decoder) throws {
+        mapping = try? InputMapping(from: decoder)
     }
 }

@@ -14,6 +14,49 @@ Newest first.
 
 ---
 
+## Build 23 – Fade in to a section, cue lag fix
+
+**Fade-in replaces Panic.** Josh: Panic "is not exactly what I want. The intent is to get a
+band back on tracks and click if they get off. So if someone hits the fade out, the best way
+to fade in is not a separate button": Fade In should "trigger a sweep into a section over the
+course of a bar or two".
+
+- The Panic button and its mappable action are gone.
+- Pressing Fade while faded out now re-enters a section. Playback jumps a bar or two ahead of
+  the section and the mix fades in (with the filter sweep, if on) over the run-up, landing at
+  full level on the section's first beat.
+  - The section is the cued one if a section is cued, otherwise the one playing.
+  - While playing, the jump keeps the place within the bar, so the click carries on in time
+    and the run-up is up to a bar shorter than the setting. From a stop it starts on the bar
+    line and starts playback.
+  - Right-click Fade ▸ Fade In Starts: Where the Song Is (the old behaviour), or 1, 2 (default)
+    or 4 bars before the section.
+  - Falls back to fading in where the song is when the song has no tempo or sections, or the
+    section has no bars before it (the first section).
+- `ShowJumpPlanner.sectionEntry`, `LivePlaybackView.enterSectionForFadeIn`,
+  `FadeButtonSettings.entryBars`, `FadeSettingsMenu`.
+- Saved key and MIDI mappings are now decoded one at a time (`InputMappingStore`), so a
+  mapping to the removed Panic action is dropped without losing the others.
+
+**Lag while a section is cued.** Josh's screen recording (playing, Section 3 cued) showed the
+whole window freezing for about 0.3 s, then moving for a few frames, on a 0.35 s cycle: the
+cue blink. The blink was a `@State` toggle on `LivePlaybackView`, so every blink re-rendered
+the whole setlist screen.
+
+- The blink no longer touches SwiftUI state. `CueFlash.isBright` reads the phase from the
+  clock. The lane canvas checks it on its display-link frame (`Layout.isCueBright`), and the
+  cued section row blinks in its own `TimelineView`. `cueFlashPhase` and the blink tasks are
+  removed from `LivePlaybackView`, `RemoteLivePlaybackView`, the scroll view, the canvas scene
+  and `SetlistSectionPlayback`. The editor's own blink is unchanged.
+- Not found: why one re-render of the setlist screen costs about 0.3 s on Josh's setlist
+  (9 songs, about 10 sections each). Anything else that re-renders it (setting or clearing a
+  cue, play and pause, a song change) still pays that once. A tooltip theory was measured and
+  ruled out (100 `.help` targets cost under 1 ms). Worth an Instruments run by Blake.
+
+Tests: `ShowJumpPlannerTests` (section entry). Full suite passes; Mac and iOS build clean.
+
+---
+
 ## Build 22 – Me Time on another audio device
 
 Josh: Me Time should route all audio "out a secondary dedicated output either on the same

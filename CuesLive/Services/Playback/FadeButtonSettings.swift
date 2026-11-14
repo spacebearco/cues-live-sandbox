@@ -7,6 +7,18 @@ enum FadeButtonSettings {
     static let filterSweepKey = "fadeButtonFilterSweep"
     static let defaultBars = 4
     static let barOptions = [1, 2, 4, 8, 16]
+    /// Bars of run-up when a fade-in re-enters a section. 0 fades in where the song is.
+    static let entryBarsKey = "fadeInEntryBars"
+    static let defaultEntryBars = 2
+    static let entryBarOptions = [0, 1, 2, 4]
+
+    static var entryBars: Int {
+        UserDefaults.standard.object(forKey: entryBarsKey) as? Int ?? defaultEntryBars
+    }
+
+    static func entryLabel(forBars bars: Int) -> String {
+        bars == 0 ? "Where the Song Is" : "\(label(forBars: bars)) Before the Section"
+    }
 
     static var bars: Int {
         let stored = UserDefaults.standard.integer(forKey: barsKey)

@@ -1,25 +1,32 @@
 import SwiftData
 import SwiftUI
 
-/// Panic, the standalone filter sweep, Me Time and the song-linked group faders.
+/// Fade-in into a section, the standalone filter sweep, Me Time and the song-linked group faders.
 extension LivePlaybackView {
-    /// Jumps to one bar before the start of the section playing and keeps (or starts) playback,
-    /// so the band gets a bar of pre-roll back into the section.
-    func panicToSectionStart() {
-        guard coordinator.isLoaded else { return }
-        let snapshot = coordinator.currentWaveformSnapshot
-        let target = ShowJumpPlanner.panicTarget(
-            now: coordinator.currentTime,
-            sections: snapshot?.sections ?? [],
-            tempoChanges: snapshot?.tempoChanges ?? [],
-            timeSignatureChanges: snapshot?.timeSignatureChanges ?? []
-        )
+    /// Moves playback to the run-up of the section a fade-in should land on (the cued section,
+    /// or the one playing) and returns how long the fade-in has. `nil` fades in where the
+    /// song is: the setting is off, the song has no tempo or sections, or there is no room.
+    func enterSectionForFadeIn() -> TimeInterval? {
+        guard coordinator.isLoaded, let snapshot = coordinator.currentWaveformSnapshot else { return nil }
+        let now = coordinator.currentTime
+        let section = snapshot.sections.first { $0.id == cuedSectionID }
+            ?? snapshot.sections.section(atTimeline: now)
+        guard let section, let entry = ShowJumpPlanner.sectionEntry(
+            to: section.timelineStartSeconds,
+            from: now,
+            leadBars: FadeButtonSettings.entryBars,
+            keepsBeatPhase: coordinator.isPlaying,
+            tempoChanges: snapshot.tempoChanges,
+            timeSignatureChanges: snapshot.timeSignatureChanges
+        ) else { return nil }
+
         clearMarkerCue()
         sectionLoop.endLoopIfActive()
-        coordinator.seek(to: target)
+        coordinator.seek(to: entry.start)
         if !coordinator.isPlaying {
             coordinator.play()
         }
+        return entry.duration
     }
 
     func toggleFilterSweep() {

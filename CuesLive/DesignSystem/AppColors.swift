@@ -76,8 +76,6 @@ enum AppColors {
     static let transportPlay = Color.green
     static let transportLoop = Color.purple
     static let transportFade = Color.red
-    /// Panic button glyph.
-    static let transportPanic = Color.orange
 
     static let soloActive = Color(.soloActive)
     static let muteActive = Color(.muteActive)

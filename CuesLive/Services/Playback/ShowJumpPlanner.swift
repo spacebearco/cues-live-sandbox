@@ -92,29 +92,52 @@ enum ShowJumpPlanner {
         return barStart(containing: time, offsetBy: 0, tempoChanges, timeSignatureChanges)
     }
 
-    /// Where Panic lands: one bar before the start of the section playing at `now`, so the band
-    /// gets a bar of pre-roll and comes back in on the section's downbeat. Outside every
-    /// section, the bar before the one playing. Without a tempo there are no bars, so it lands
-    /// on the section start (or stays put).
-    static func panicTarget(
-        now: TimeInterval,
-        sections: [SongSection],
+    /// Where a fade-in re-enters a section, and how long it has to get there.
+    struct SectionEntry: Equatable {
+        /// Where playback jumps to: `leadBars` bars before the section.
+        let start: TimeInterval
+        /// Time from `start` to the section's first beat: the length of the fade-in.
+        let duration: TimeInterval
+    }
+
+    /// A fade-in that brings the band back in on a section's downbeat: playback jumps
+    /// `leadBars` bars ahead of `sectionStart` and the mix fades in over the run-up.
+    ///
+    /// While playing, the jump keeps the place within the bar (`keepsBeatPhase`), so the click
+    /// never skips a beat; the run-up is then up to one bar shorter than `leadBars`. `nil`
+    /// without a tempo (no bars to count) or when the section has no room before it.
+    static func sectionEntry(
+        to sectionStart: TimeInterval,
+        from now: TimeInterval,
+        leadBars: Int,
+        keepsBeatPhase: Bool,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange]
-    ) -> TimeInterval {
-        let anchor = sections.section(atTimeline: now)?.timelineStartSeconds ?? now
-        guard !tempoChanges.isEmpty else { return max(0, anchor) }
+    ) -> SectionEntry? {
+        guard leadBars > 0, !tempoChanges.isEmpty else { return nil }
+        func start(ofMeasure measure: Int) -> TimeInterval {
+            MeasureTiming.timeAtStartOfMeasure(measure, tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        }
+        func measure(at time: TimeInterval) -> Int {
+            MeasureTiming.measureIndex(at: max(0, time), tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        }
         // A hair inside the bar, so a section starting exactly on a bar line counts as that bar.
-        let measure = MeasureTiming.measureIndex(
-            at: max(0, anchor) + 0.005,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
-        )
-        return max(0, MeasureTiming.timeAtStartOfMeasure(
-            max(0, measure - 1),
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
-        ))
+        let sectionMeasure = measure(at: sectionStart + 0.005)
+        let leadMeasure = max(0, sectionMeasure - leadBars)
+        var entryStart = start(ofMeasure: leadMeasure)
+        if keepsBeatPhase {
+            let nowMeasure = measure(at: now)
+            let nowBarStart = start(ofMeasure: nowMeasure)
+            let nowBarLength = start(ofMeasure: nowMeasure + 1) - nowBarStart
+            let leadBarLength = start(ofMeasure: leadMeasure + 1) - entryStart
+            if nowBarLength > 0 {
+                let fraction = min(max((now - nowBarStart) / nowBarLength, 0), 0.999)
+                entryStart += fraction * leadBarLength
+            }
+        }
+        let duration = sectionStart - entryStart
+        guard duration > 0.1 else { return nil }
+        return SectionEntry(start: max(0, entryStart), duration: duration)
     }
 
     /// Start of the bar `time` is in, or of the bar `offset` bars later.

@@ -23,11 +23,20 @@ final class TrackMemoryPlayer {
         var playbackTimelineOffset: TimeInterval = 0
         var playbackEndTimeline: TimeInterval?
         let peakMeter = PeakMeterHolder()
+        /// Where this track adds its output for the setlist mix meter; `nil` when it has no slot.
+        private var mixMeterBus: MixMeterBus?
+        private var mixMeterSlot = -1
         /// Present while the track needs live stretching: a re-timed clip or a key change.
         private var stretcher: LiveStretcher?
         private var transposeSemitones: Float = 0
         private var isInvalidated = false
         private var gainRamp = GainRamp()
+        /// An arrangement set while playing waits here for the next block, which fades across it.
+        private var pendingMapper: ArrangementTimelineMapper?
+        private var swapFade: ArrangementSwapFade
+        /// The Fade button's filter sweep on this track; bypassed while `lowPassClosure` is 0.
+        private let lowPass: LowPassSweep
+        private var lowPassClosure = 0.0
         private var panRamp = PanRamp()
         private let gainRampFrames: Int
         private var stateLock = os_unfair_lock()
@@ -42,6 +51,8 @@ final class TrackMemoryPlayer {
             self.mapper = mapper
             self.sampleRate = buffer.sampleRate
             self.gainRampFrames = max(1, Int(buffer.sampleRate * GainRamp.defaultRampSeconds))
+            self.swapFade = ArrangementSwapFade(sampleRate: buffer.sampleRate)
+            self.lowPass = LowPassSweep(sampleRate: buffer.sampleRate, channelCount: buffer.channelCount)
             refreshStretcher()
         }
 
@@ -51,12 +62,53 @@ final class TrackMemoryPlayer {
             os_unfair_lock_unlock(&stateLock)
         }
 
+        /// Applies an edited arrangement. Stopped, or when nothing changes under the playhead
+        /// (a split, an edit elsewhere in the song), it takes over at once with no fade. When the
+        /// audio at the playhead does change, the new audio is read in first and the switch
+        /// fades across one block.
         func updateMapper(_ mapper: ArrangementTimelineMapper) {
             os_unfair_lock_lock(&stateLock)
-            self.mapper = mapper
+            let current = pendingMapper ?? self.mapper
+            guard mapper != current else {
+                os_unfair_lock_unlock(&stateLock)
+                return
+            }
+            guard transport.isPlaying else {
+                self.mapper = mapper
+                pendingMapper = nil
+                os_unfair_lock_unlock(&stateLock)
+                refreshStretcher()
+                return
+            }
+            let playhead = transport.timelineSeconds(atHostTime: mach_absolute_time()) - playbackTimelineOffset
+            let changesNow = current.firstDifference(
+                from: mapper,
+                at: playhead,
+                within: Self.liveEditFadeWindow
+            ) != nil
+            if !changesNow {
+                self.mapper = mapper
+                pendingMapper = nil
+            }
             os_unfair_lock_unlock(&stateLock)
+
+            if changesNow {
+                if let source = mapper.sourceSeconds(atMasterTimeline: playhead) {
+                    buffer.preload(fromSourceFrame: AudioPlaybackTransport.frameIndex(for: source, sampleRate: sampleRate))
+                }
+                os_unfair_lock_lock(&stateLock)
+                pendingMapper = mapper
+                os_unfair_lock_unlock(&stateLock)
+            }
             refreshStretcher()
         }
+
+        /// An edit whose first audible change is further off than this needs no fade: playback
+        /// simply reaches the new material, as it reaches any clip boundary.
+        private static let liveEditFadeWindow: TimeInterval = 0.1
+
+        /// How far ahead the next clip's audio is read in.
+        private static let jumpLookaheadSeconds: TimeInterval = 2
 
         func setTransposeSemitones(_ semitones: Float) {
             os_unfair_lock_lock(&stateLock)
@@ -69,7 +121,9 @@ final class TrackMemoryPlayer {
         /// Tracks at their original speed and key skip it and cost nothing extra.
         private func refreshStretcher() {
             os_unfair_lock_lock(&stateLock)
-            let needsStretcher = mapper.hasRetimedClips || abs(transposeSemitones) > 0.001
+            let needsStretcher = mapper.hasRetimedClips
+                || (pendingMapper?.hasRetimedClips ?? false)
+                || abs(transposeSemitones) > 0.001
             let hasStretcher = stretcher != nil
             os_unfair_lock_unlock(&stateLock)
 
@@ -100,6 +154,27 @@ final class TrackMemoryPlayer {
             os_unfair_lock_unlock(&stateLock)
         }
 
+        func setLowPassClosure(_ closure: Double) {
+            os_unfair_lock_lock(&stateLock)
+            lowPassClosure = closure
+            os_unfair_lock_unlock(&stateLock)
+        }
+
+        func attachMixMeter(_ bus: MixMeterBus?, slot: Int) {
+            os_unfair_lock_lock(&stateLock)
+            mixMeterBus = bus
+            mixMeterSlot = slot
+            os_unfair_lock_unlock(&stateLock)
+        }
+
+        /// Adds the block just rendered (post-fader, silence included) to the mix meter.
+        func reportToMixMeter(_ outputBuffer: UnsafeMutablePointer<AudioBufferList>, frameCount: AVAudioFrameCount) {
+            os_unfair_lock_lock(&stateLock)
+            let bus = mixMeterBus, slot = mixMeterSlot
+            os_unfair_lock_unlock(&stateLock)
+            bus?.add(slot: slot, buffers: UnsafeMutableAudioBufferListPointer(outputBuffer), frameCount: Int(frameCount))
+        }
+
         func setPlaybackWindow(offset: TimeInterval, endTimeline: TimeInterval?) {
             os_unfair_lock_lock(&stateLock)
             playbackTimelineOffset = offset
@@ -125,9 +200,15 @@ final class TrackMemoryPlayer {
             // A muted track that has finished ramping out renders nothing.
             guard targetGain > 0 || gainRamp.current > 0 else { return }
 
+            let swapsMapper = pendingMapper != nil
             guard renderPlayback(frameCount: frameCount, hostTime: hostTime, outputBuffer: outputBuffer) else {
                 // Silent block: keep the gain current so the next audible block
                 // does not ramp from a stale value, and restart the stretcher on resume.
+                if let pending = pendingMapper {
+                    mapper = pending
+                    pendingMapper = nil
+                    swapFade.cancel()
+                }
                 stretcher?.invalidatePosition()
                 gainRamp.snap(to: targetGain)
                 panRamp.snap(to: mix.pan)
@@ -148,7 +229,20 @@ final class TrackMemoryPlayer {
                 frameCount: Int(frameCount),
                 rampFrames: gainRampFrames
             )
-            peakMeter.report(Self.peakAmplitude(in: outputBuffer, frameCount: frameCount))
+            let buffers = UnsafeMutableAudioBufferListPointer(outputBuffer)
+            lowPass.process(buffers, frameCount: Int(frameCount), closure: lowPassClosure)
+            if swapsMapper, let pending = pendingMapper {
+                // This block played the old arrangement: fade it out, then switch.
+                swapFade.fadeOut(buffers, frameCount: Int(frameCount))
+                mapper = pending
+                pendingMapper = nil
+                stretcher?.invalidatePosition()
+            } else {
+                swapFade.fadeIn(buffers, frameCount: Int(frameCount))
+            }
+            let level = Self.level(in: outputBuffer, frameCount: frameCount)
+            peakMeter.report(level.peak)
+            peakMeter.reportMeanSquare(level.meanSquare)
         }
 
         /// Fills `outputBuffer` at unity gain. Returns `false` when nothing was
@@ -220,6 +314,10 @@ final class TrackMemoryPlayer {
                 outputEnd: outputEnd,
                 outputBuffer: outputBuffer,
                 transportMasterStart: masterStart
+            )
+            let jump = mapper.upcomingJumpSource(afterMasterTimeline: effectiveStart, within: Self.jumpLookaheadSeconds)
+            buffer.noteUpcomingJump(
+                toSourceFrame: jump.map { AudioPlaybackTransport.frameIndex(for: $0, sampleRate: sampleRate) }
             )
             return true
         }
@@ -441,22 +539,28 @@ final class TrackMemoryPlayer {
             mix.isAudible ? max(mix.volume, 0) : 0
         }
 
-        private static func peakAmplitude(
+        /// Sample peak and mean square of the block, across all channels.
+        private static func level(
             in outputBuffer: UnsafeMutablePointer<AudioBufferList>,
             frameCount: AVAudioFrameCount
-        ) -> Float {
+        ) -> (peak: Float, meanSquare: Float) {
             let buffers = UnsafeMutableAudioBufferListPointer(outputBuffer)
-            guard frameCount > 0, !buffers.isEmpty else { return 0 }
+            guard frameCount > 0, !buffers.isEmpty else { return (0, 0) }
 
             var peak: Float = 0
+            var sum: Float = 0
+            var samples = 0
             for buffer in buffers {
                 guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
                 let count = min(Int(frameCount), Int(buffer.mDataByteSize) / MemoryLayout<Float>.size)
                 for index in 0..<count {
-                    peak = max(peak, abs(data[index]))
+                    let value = data[index]
+                    peak = max(peak, abs(value))
+                    sum += value * value
                 }
+                samples += count
             }
-            return peak
+            return (peak, samples > 0 ? sum / Float(samples) : 0)
         }
 
         func prepareLoopPrefetch(atMasterTimeline masterLoopStart: TimeInterval?) {
@@ -538,6 +642,7 @@ final class TrackMemoryPlayer {
                 hostTime: hostTime,
                 outputBuffer: outputData
             )
+            context.reportToMixMeter(outputData, frameCount: frameCount)
             return noErr
         }
     }
@@ -580,6 +685,21 @@ final class TrackMemoryPlayer {
 
     func resetPeakMeter() {
         renderContext.peakMeter.reset()
+    }
+
+    /// Smoothed RMS of what the track plays (linear), for the track meter.
+    func rmsLevel() -> Float {
+        renderContext.peakMeter.rms()
+    }
+
+    /// Closes the Fade button's low-pass sweep by `closure` (0 open … 1 closed).
+    func setLowPassClosure(_ closure: Double) {
+        renderContext.setLowPassClosure(closure)
+    }
+
+    /// Gives the track a slot in the setlist mix meter, or takes it away with `nil`.
+    func attachMixMeter(_ bus: MixMeterBus?, slot: Int) {
+        renderContext.attachMixMeter(bus, slot: slot)
     }
 
     /// Pins the source audio under the loop start so the frames rendered right

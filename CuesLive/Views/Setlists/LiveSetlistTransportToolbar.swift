@@ -119,12 +119,13 @@ private struct LiveToolbarEditorToggle: View {
     let coordinator: PlaybackCoordinator
     let isOn: Bool
     let action: () -> Void
+    @AppStorage(SetlistPlayMode.storageKey) private var playMode = SetlistPlayMode.defaultMode
 
     var body: some View {
         Toggle(isOn: Binding(get: { isOn }, set: { _ in action() })) {
             Label("Song Editor", systemImage: "rectangle.badge.plus")
         }
-        .disabled(coordinator.currentSong == nil)
-        .help("Edit the playing song")
+        .disabled(coordinator.currentSong == nil || playMode == .show)
+        .help(playMode == .show ? SetlistPlayMode.lockedExplanation : "Edit the playing song")
     }
 }

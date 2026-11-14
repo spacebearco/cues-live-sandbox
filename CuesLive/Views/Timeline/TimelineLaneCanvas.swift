@@ -62,6 +62,7 @@ struct TimelineLaneCanvas {
     let loadsWaveforms: Bool
     /// The clip under the pointer. On macOS the canvas follows it directly, outside SwiftUI updates.
     let hover: TimelineClipHoverModel
+    var waveformScale: Float = 1
 
     func scene(in environment: EnvironmentValues) -> TimelineLanePainter.Scene {
         TimelineLanePainter.Scene(
@@ -77,7 +78,8 @@ struct TimelineLaneCanvas {
             duration: max(duration, 0.001),
             contentWidth: contentWidth,
             backgroundColor: AppColors.Timeline.background.resolve(in: environment).cgColor,
-            loadsWaveforms: loadsWaveforms
+            loadsWaveforms: loadsWaveforms,
+            waveformScale: waveformScale
         )
     }
 }

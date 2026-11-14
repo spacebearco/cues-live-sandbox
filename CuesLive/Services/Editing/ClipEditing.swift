@@ -295,7 +295,8 @@ enum ClipEditing {
                 gainDB: clip.gainDB,
                 playbackRate: clip.playbackRate,
                 fadeIn: clip.fadeIn,
-                fadeOut: clip.fadeOut
+                fadeOut: clip.fadeOut,
+                isMuted: clip.isMuted
             )
         }
         place(copies, in: &clips)
@@ -711,7 +712,8 @@ enum ClipEditing {
             gainDB: clip.gainDB,
             playbackRate: clip.playbackRate,
             fadeIn: abs(start - clip.timelineStartSeconds) <= tolerance ? clip.fadeIn : .none,
-            fadeOut: abs(end - clip.timelineEndSeconds) <= tolerance ? clip.fadeOut : .none
+            fadeOut: abs(end - clip.timelineEndSeconds) <= tolerance ? clip.fadeOut : .none,
+            isMuted: clip.isMuted
         )
     }
 }

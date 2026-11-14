@@ -45,7 +45,7 @@ struct SetlistSongEditorHost: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .focusedValue(\.songUndoActions, songUndoActions)
+        .modifier(SongUndoFocusedValue(undoController: undoController))
         .onAppear(perform: loadEditor)
         .onDisappear(perform: persistIfEdited)
         .task(id: editedState) {
@@ -62,17 +62,6 @@ struct SetlistSongEditorHost: View {
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             midiEvents: midiEvents
-        )
-    }
-
-    private var songUndoActions: SongUndoActions {
-        SongUndoActions(
-            canUndo: undoController.canUndo,
-            canRedo: undoController.canRedo,
-            undoActionName: undoController.undoActionName,
-            redoActionName: undoController.redoActionName,
-            undo: { undoController.undo() },
-            redo: { undoController.redo() }
         )
     }
 

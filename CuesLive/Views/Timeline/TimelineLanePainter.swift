@@ -24,6 +24,8 @@ final class TimelineLanePainter {
         var backgroundColor = CGColor(gray: 0, alpha: 1)
         /// `false` until the song has loaded, so opening the editor does not queue every file.
         var loadsWaveforms = false
+        /// Editor-wide waveform size (`WaveformSizeControl`); 1 draws peaks at their level.
+        var waveformScale: Float = 1
     }
 
     /// The part of one clip being drawn, in content points.
@@ -210,7 +212,7 @@ final class TimelineLanePainter {
             channelCount: channelCount,
             columns: columns,
             half: bandHeight * WaveformColumnGeometry.amplitudeFraction,
-            gain: span.clip.columnGain(startX: span.startX, width: span.width)
+            gain: waveformGain(span)
         ) { range in
             Self.columns(
                 range,
@@ -287,7 +289,7 @@ final class TimelineLanePainter {
     ) {
         let samples = window.channels[channel]
         let half = band.height * WaveformColumnGeometry.amplitudeFraction
-        let gain = span.clip.columnGain(startX: span.startX, width: span.width)
+        let gain = waveformGain(span)
         let path = CGMutablePath()
         for frame in frames {
             let index = frame - window.origin
@@ -309,6 +311,13 @@ final class TimelineLanePainter {
 
     /// Each fade's curve across the clip body, silence at the bottom and unity at the top, and
     /// the area above it. Nil when the clip has no fade on screen.
+    /// The clip's waveform gain, fades included, scaled by the song's waveform size.
+    private func waveformGain(_ span: ClipSpan) -> WaveformColumnGain {
+        var gain = span.clip.columnGain(startX: span.startX, width: span.width)
+        gain.level *= scene.waveformScale
+        return gain
+    }
+
     private func fadePaths(_ span: ClipSpan, band: CGRect) -> (curves: CGPath, shade: CGPath)? {
         let clip = span.clip
         let duration = clip.timelineEnd - clip.timelineStart

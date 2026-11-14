@@ -36,7 +36,7 @@ struct ChangeKeyDialog: View {
                         ContentUnavailableView(
                             "No Tracks",
                             systemImage: "waveform",
-                            description: Text("Import stems before changing key.")
+                            description: Text("Import stems before transposing.")
                         )
                     } else {
                         ForEach(song.sortedTracks) { track in
@@ -55,7 +55,7 @@ struct ChangeKeyDialog: View {
                 }
             }
             .formStyle(.grouped)
-            .navigationTitle("Change Key")
+            .navigationTitle("Transpose")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -79,7 +79,7 @@ struct ChangeKeyDialog: View {
             semitones = song.transposeSemitones
             includedTrackIDs = KeyChangeTrackSelection.initialIncludedIDs(in: song)
         }
-        .alert("Key Change Failed", isPresented: Binding(
+        .alert("Transpose Failed", isPresented: Binding(
             get: { applyError != nil },
             set: { if !$0 { applyError = nil } }
         )) {
@@ -116,7 +116,7 @@ struct ChangeKeyDialog: View {
     }
 
     private var keyChangeLabel: String? {
-        guard let raw = song.baseKeyRaw, let base = SongMusicalKey(rawValue: raw) else { return nil }
+        guard let raw = song.baseKeyRaw, let base = SongMusicalKey(spelling: raw) else { return nil }
         let mode = SongKeyMode(raw: song.keyModeRaw)
         let shifted = base.transposed(by: semitones)
         guard shifted != base else { return base.label(mode: mode) }
@@ -149,7 +149,7 @@ struct ChangeKeyDialog: View {
 
         do {
             try viewModel.applyKeyChange(context: modelContext)
-            registerUndo("Change Key", before, captureSnapshot())
+            registerUndo("Transpose", before, captureSnapshot())
             dismiss()
         } catch {
             song.transposeSemitones = previousSemitones

@@ -271,9 +271,11 @@ private struct NonCurrentSongSelectTapModifier: ViewModifier {
             )
     }
 
+    /// The clicked section's start; a song with no sections starts at the clicked time.
     private func sectionStart(atX x: CGFloat) -> TimeInterval? {
-        guard contentWidth > 0, let window, !sections.isEmpty else { return nil }
+        guard contentWidth > 0, let window else { return nil }
         let time = window.time(at: x, width: contentWidth)
+        guard !sections.isEmpty else { return time }
         let hit = sections.first { time >= $0.timelineStartSeconds && time < $0.timelineEndSeconds }
             ?? sections.last.flatMap { time >= $0.timelineStartSeconds && time <= $0.timelineEndSeconds ? $0 : nil }
         return hit?.timelineStartSeconds

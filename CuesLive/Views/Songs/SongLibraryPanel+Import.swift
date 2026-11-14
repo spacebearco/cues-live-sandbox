@@ -30,12 +30,12 @@ extension SongLibraryPanel {
             let panel = NSOpenPanel()
             panel.canChooseFiles = false
             panel.canChooseDirectories = true
-            panel.allowsMultipleSelection = false
+            panel.allowsMultipleSelection = true
             panel.canCreateDirectories = false
             panel.prompt = "Import"
-            panel.message = "Choose a song folder with stems (and an optional Ableton Live Set)."
-            guard panel.runModal() == .OK, let folderURL = panel.url else { return }
-            queueFolderImport([folderURL])
+            panel.message = "Choose song folders, or a folder of song folders, with stems (and optional Ableton Live Sets)."
+            guard panel.runModal() == .OK, !panel.urls.isEmpty else { return }
+            queueFolderImport(panel.urls)
         }
         #else
         showingFolderImporter = true
@@ -88,7 +88,8 @@ extension SongLibraryPanel {
         guard !isBusy, folderSetupSession == nil, !folderURLs.isEmpty else { return }
 
         isPreparingFolderSetup = true
-        let urls = folderURLs
+        // A folder that holds only song folders stands for each of them.
+        let urls = SongFolderImporter.songFolders(from: folderURLs)
         Task { @MainActor in
             await Task.yield()
             defer { isPreparingFolderSetup = false }

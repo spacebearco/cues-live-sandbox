@@ -7,6 +7,9 @@ extension AppColors {
         static let buttonActiveLabel = Color.black.opacity(0.85)
 
         static let meterLevel = Color(.meterLevel)
+        /// Level meter zones above `meterLevel`: approaching full scale, and over.
+        static let meterWarning = Color(.meterWarning)
+        static let meterOver = Color(.meterOver)
         /// Live level drawn behind the volume readout.
         static let readoutLevel = meterLevel.opacity(0.55)
         /// Live level beside a group fader.

@@ -14,14 +14,16 @@ private enum AppWindowMetrics {
 struct CuesLiveApp: App {
     private let modelContainer: ModelContainer
     #if os(macOS) && !APP_STORE
-    /// Local Xcode builds keep the project placeholders (`1.0` / build `1`).
-    /// Sparkle compares that build number to the release feed and always
-    /// reports an update. Shipped builds override both values in CI.
+    /// Sparkle runs only when a build sets `SPARKLE_FEED_URL`, so builds without
+    /// a release feed never offer to replace themselves. Local Xcode builds also
+    /// keep the project placeholders (`1.0` / build `1`), which Sparkle would
+    /// always treat as outdated; shipped builds override both values in CI.
     private let sparkleUpdater: SparkleUpdater? = {
         let info = Bundle.main.infoDictionary
+        let feedURL = (info?["SUFeedURL"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
         let version = info?["CFBundleShortVersionString"] as? String
         let build = info?["CFBundleVersion"] as? String
-        guard version != "1.0" || build != "1" else { return nil }
+        guard !feedURL.isEmpty, version != "1.0" || build != "1" else { return nil }
         return SparkleUpdater()
     }()
     #endif
@@ -136,13 +138,19 @@ struct ClipEditorActions {
     var canDeselect = false
     var canAdjustGain = false
     var canNudgeGain = false
+    var canInsertBars = false
+    var canCopy = false
+    var canPaste = false
     var split: () -> Void = {}
+    var splitAtPlayhead: () -> Void = {}
     var join: () -> Void = {}
     var duplicate: () -> Void = {}
     var deselectAll: () -> Void = {}
     var adjustGain: () -> Void = {}
     var nudgeGainUp: () -> Void = {}
     var nudgeGainDown: () -> Void = {}
+    var insertBars: () -> Void = {}
+    var toggleMute: () -> Void = {}
 }
 
 struct TrackHeightActions {
@@ -305,10 +313,16 @@ struct ClipEditorCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .pasteboard) {
-            Button("Split Regions at Playhead") {
+            Button("Split at Edit Head") {
                 actions?.split()
             }
             .keyboardShortcut("t", modifiers: .command)
+            .disabled(actions?.canSplit != true)
+
+            Button("Split at Playhead") {
+                actions?.splitAtPlayhead()
+            }
+            .keyboardShortcut("t", modifiers: [.command, .option])
             .disabled(actions?.canSplit != true)
 
             Button("Join Regions") {
@@ -322,6 +336,17 @@ struct ClipEditorCommands: Commands {
             }
             .keyboardShortcut("d", modifiers: .command)
             .disabled(actions?.canDuplicate != true)
+
+            Button("Mute / Unmute Regions") {
+                actions?.toggleMute()
+            }
+            .keyboardShortcut("m", modifiers: .control)
+            .disabled(actions?.canCopy != true)
+
+            Button("Insert Bars…") {
+                actions?.insertBars()
+            }
+            .disabled(actions?.canInsertBars != true)
 
             Button("Deselect All Regions") {
                 actions?.deselectAll()

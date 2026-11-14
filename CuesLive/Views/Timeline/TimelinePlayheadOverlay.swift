@@ -153,47 +153,6 @@ struct TimelinePlayheadOverlay: View {
     }
 }
 
-/// Blinking insertion on the selected lanes. Visible while stopped, until playback starts.
-struct TimelineInsertionCursor: View {
-    let time: TimeInterval
-    let duration: TimeInterval
-    let contentWidth: CGFloat
-    let rows: [TrackLaneFrames.Row]
-    let areaHeight: CGFloat
-
-    @State private var anchor = Date()
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 0.25)) { context in
-            let elapsed = context.date.timeIntervalSince(anchor)
-            let visible = Int(elapsed * 2) % 2 == 0
-            Canvas { canvas, _ in
-                guard visible else { return }
-                let x = TimelineLayout.xPosition(
-                    for: min(max(0, time), max(duration, 0.001)),
-                    duration: max(duration, 0.001),
-                    contentWidth: contentWidth
-                )
-                let color = AppColors.Timeline.insertionCursor
-                for row in rows {
-                    var path = Path()
-                    path.move(to: CGPoint(x: x, y: row.originY))
-                    path.addLine(to: CGPoint(x: x, y: row.originY + row.height))
-                    canvas.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 1))
-                }
-            }
-            .frame(width: contentWidth, height: areaHeight, alignment: .topLeading)
-        }
-        .onChange(of: time) { _, _ in
-            anchor = Date()
-        }
-        .onChange(of: rows) { _, _ in
-            anchor = Date()
-        }
-        .allowsHitTesting(false)
-    }
-}
-
 /// Wires section-loop monitoring and playback-time handling into a timeline view.
 struct SectionLoopPlaybackSupport: View {
     /// UI / clock engine used for playhead observation. Remains `shared` after overlap.

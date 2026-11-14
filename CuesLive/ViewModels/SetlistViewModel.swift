@@ -76,7 +76,7 @@ final class SetlistViewModel {
 
     private func clearOverlapTransitions(for entries: [SetlistEntry]) {
         for entry in entries where entry.transition == .overlap {
-            entry.transition = .continue
+            entry.transition = .stop
         }
     }
 

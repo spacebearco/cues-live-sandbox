@@ -109,6 +109,10 @@ enum ClipDragRequest {
 }
 
 enum ClipMenuAction: Equatable {
+    case cut
+    case copy
+    case paste
+    case mute
     case split
     case duplicate
     case join

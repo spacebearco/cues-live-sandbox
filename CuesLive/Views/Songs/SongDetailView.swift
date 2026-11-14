@@ -58,7 +58,7 @@ struct SongDetailView: View {
             .navigationBarBackButtonHidden(true)
             #if os(macOS)
             .focusedValue(\.songEditorActions, songEditorActions)
-            .focusedValue(\.songUndoActions, songUndoActions)
+            .modifier(SongUndoFocusedValue(undoController: undoController))
             #endif
             .onDisappear {
                 AudioEngineManager.shared.stop()
@@ -166,16 +166,6 @@ struct SongDetailView: View {
         )
     }
 
-    private var songUndoActions: SongUndoActions {
-        return SongUndoActions(
-            canUndo: undoController.canUndo,
-            canRedo: undoController.canRedo,
-            undoActionName: undoController.undoActionName,
-            redoActionName: undoController.redoActionName,
-            undo: { undoController.undo() },
-            redo: { undoController.redo() }
-        )
-    }
     #endif
 
     private func handleAppear() {

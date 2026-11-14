@@ -2,10 +2,24 @@ import Foundation
 import SwiftData
 
 struct GroupMixSnapshot: Sendable {
+    /// The Fade button's low-pass sweep: how far it is closed, and on which groups.
+    struct FadeFilter: Sendable, Equatable {
+        /// 0 open (no filtering) … 1 closed down to `LowPassSweep.minimumHz`.
+        var closure: Double = 0
+        var groupIDs: Set<UUID> = []
+        var includesUngrouped = false
+
+        func closure(forGroup groupID: UUID?) -> Double {
+            let applies = groupID.map(groupIDs.contains) ?? includesUngrouped
+            return applies ? closure : 0
+        }
+    }
+
     let volumeByGroupID: [UUID: Float]
     let mutedGroupIDs: Set<UUID>
     let ungroupedVolume: Float
     let ungroupedIsMuted: Bool
+    var fadeFilter = FadeFilter()
 
     static let `default` = GroupMixSnapshot(
         volumeByGroupID: [:],
@@ -22,7 +36,8 @@ struct GroupMixSnapshot: Sendable {
                 volumeByGroupID: volumes,
                 mutedGroupIDs: mutedGroupIDs,
                 ungroupedVolume: ungroupedVolume,
-                ungroupedIsMuted: ungroupedIsMuted
+                ungroupedIsMuted: ungroupedIsMuted,
+                fadeFilter: fadeFilter
             )
         }
 
@@ -30,7 +45,8 @@ struct GroupMixSnapshot: Sendable {
             volumeByGroupID: volumeByGroupID,
             mutedGroupIDs: mutedGroupIDs,
             ungroupedVolume: volume,
-            ungroupedIsMuted: ungroupedIsMuted
+            ungroupedIsMuted: ungroupedIsMuted,
+            fadeFilter: fadeFilter
         )
     }
 }

@@ -62,6 +62,7 @@ extension EditView {
                     onDelete: {
                         deleteAudioTrack(track)
                     },
+                    onSplitToMono: track.sourceChannel == nil ? { splitTrackToMono(track) } : nil,
                     onResize: { resizeLane(track.id, by: $0) },
                     onResizeEnded: finishLaneResize
                 )

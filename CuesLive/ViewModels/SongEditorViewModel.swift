@@ -13,6 +13,7 @@ final class SongEditorViewModel {
     private(set) var isLoaded = false
     private(set) var isReloadingSong = false
     private var trackDurations: [UUID: TimeInterval] = [:]
+    @ObservationIgnored private var pendingMixSave: Task<Void, Never>?
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     private var modelContext: ModelContext?
@@ -94,6 +95,14 @@ final class SongEditorViewModel {
         try context.save()
         try SongProjectBridge.syncProjectFile(for: song, context: context)
         refreshClick()
+    }
+
+    /// Sets the key the song is written in (not a transposition) and saves it to the project file.
+    func setBaseKey(_ key: SongMusicalKey?) {
+        guard let modelContext, song.baseKeyRaw != key?.rawValue else { return }
+        song.baseKeyRaw = key?.rawValue
+        try? modelContext.save()
+        try? SongProjectBridge.syncProjectFile(for: song, context: modelContext)
     }
 
     /// Saves the song's key and shifts each included stem live; nothing is rendered.
@@ -252,7 +261,19 @@ final class SongEditorViewModel {
             engine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
             engine.applyAllMixSettings()
         }
-        try? context.save()
+        scheduleMixSave(in: context)
+    }
+
+    /// Mute, solo and knob changes come in bursts. Saving the library on each one makes every
+    /// list in the window fetch again (the song library included), which hitches the editor, so
+    /// the save waits until the clicking stops. Closing the editor writes everything anyway.
+    private func scheduleMixSave(in context: ModelContext) {
+        pendingMixSave?.cancel()
+        pendingMixSave = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            try? context.save()
+        }
     }
 
     func updateGroup(for track: AudioTrack, context: ModelContext) {

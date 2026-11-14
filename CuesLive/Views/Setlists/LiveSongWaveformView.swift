@@ -41,21 +41,13 @@ struct LiveSongWaveformView: View {
                     sectionMappingTargets(playbackIndex: playbackIndex, contentWidth: contentWidth)
                 }
             }
+            // Every click reports its time; the setlist applies Show / Edit mode
+            // (`LivePlaybackView.handleWaveformClick`). Show mode on Section cues the clicked
+            // section exactly as a section tap here used to.
             .modifier(WaveformSeekGestureModifier(
                 isEnabled: isInteractive && !mapping.showsLiveHighlights,
                 contentWidth: contentWidth,
                 window: window,
-                sections: sections.map {
-                    WaveformSeekGestureModifier.SectionHitTarget(
-                        id: $0.id,
-                        start: $0.timelineStartSeconds,
-                        end: $0.timelineEndSeconds
-                    )
-                },
-                onSectionTap: { sectionID in
-                    guard let section = sections.first(where: { $0.id == sectionID }) else { return }
-                    onCueSection(section)
-                },
                 onSeek: onSeek
             ))
     }

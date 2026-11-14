@@ -36,7 +36,8 @@ final class SetlistEntry {
         }
     }
 
-    init(sortOrder: Int, song: Song, transition: SetlistTransition = .continue) {
+    /// New songs stop at their end by default; saved shows pass their stored transition.
+    init(sortOrder: Int, song: Song, transition: SetlistTransition = .stop) {
         self.sortOrder = sortOrder
         self.transitionRaw = transition.rawValue
         self.song = song

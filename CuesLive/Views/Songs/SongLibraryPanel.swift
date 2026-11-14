@@ -25,7 +25,7 @@ struct SongLibraryPanel: View {
     var isImportInProgress = false
 
     @State private var searchText = ""
-    @State private var sortOrder: SongLibrarySortOrder = .newest
+    @AppStorage("songLibrarySortOrder") private var sortOrder: SongLibrarySortOrder = .newest
     @State var selection: Set<UUID> = []
     #if os(iOS)
     @State var editMode: EditMode = .inactive
@@ -36,6 +36,8 @@ struct SongLibraryPanel: View {
     @State var songPendingRename: Song?
     @State var renameSongName = ""
     @State var songsPendingDelete: [Song] = []
+    /// The song whose key, tempo and meter are being edited from the library.
+    @State var songPendingQuickEdit: Song?
     @State var createSongError: String?
     @State var songActionError: String?
     #if os(macOS)

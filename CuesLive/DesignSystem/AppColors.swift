@@ -83,8 +83,7 @@ enum AppColors {
     /// Highlighted track header background when the track row is selected.
     static let trackHeaderSelected = Color(.trackHeaderSelected)
 
-    /// Editor section-marker blocks: the track palette's dark gray, lifting to its white when selected.
-    static let sectionMarker = Color(.trackPaletteDarkGray)
+    /// Selected editor section-marker block; unselected blocks use the section's own color.
     static let sectionMarkerSelected = Color(.trackPaletteWhite)
 
     /// Setlist transition badge ring for an overlap transition.

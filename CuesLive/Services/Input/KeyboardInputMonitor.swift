@@ -52,7 +52,9 @@ final class KeyboardInputMonitor {
     }
 
     #if os(macOS)
-    private static var isTextInputFocused: Bool {
+    /// True while a text field or text view has the keyboard, so editor shortcuts stay out of
+    /// the way of typing.
+    static var isTextInputFocused: Bool {
         guard let responder = NSApp.keyWindow?.firstResponder else { return false }
         if responder is NSTextView || responder is NSTextField || responder is NSText {
             return true

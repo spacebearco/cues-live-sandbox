@@ -14,7 +14,7 @@ struct RemoteHostSongLibraryPanel: View {
     var onAddToSetlist: (RemoteLibrarySongDTO) -> Void
 
     @State private var searchText = ""
-    @State private var sortOrder: RemoteHostSongLibrarySortOrder = .newest
+    @AppStorage("remoteHostSongLibrarySortOrder") private var sortOrder: RemoteHostSongLibrarySortOrder = .newest
 
     private var hasActiveSearch: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

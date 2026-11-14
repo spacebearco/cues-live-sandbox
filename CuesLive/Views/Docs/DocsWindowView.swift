@@ -402,7 +402,12 @@ private struct KeyboardShortcutsDocContent: View {
             DocHeading(title: "Song editor")
             shortcutsBlock([
                 ("Undo / Redo", "⌘Z / ⇧⌘Z"),
-                ("Split at Edit Point", "⌘T"),
+                ("Split at Edit Head", "⌘T"),
+                ("Split at Playhead", "⌥⌘T"),
+                ("Edit Head to Playhead", "Return"),
+                ("Playhead to Edit Head (while playing)", "⇧Return"),
+                ("Cut / Copy / Paste Regions", "⌘X / ⌘C / ⌘V"),
+                ("Mute / Unmute Regions", "⌃M"),
                 ("Join with Next Region", "⌘J"),
                 ("Auto Group", "⇧⌘G"),
                 ("Add Ableton File", "⇧⌘I"),

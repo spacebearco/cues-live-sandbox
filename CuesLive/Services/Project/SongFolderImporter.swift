@@ -82,7 +82,7 @@ enum SongFolderImporter {
         "multitracks", "multitrack", "stems", "tracks", "audio"
     ]
 
-    private static let supportedExtensions: Set<String> = ["wav", "aiff", "aif", "mp3", "m4a", "caf"]
+    static let supportedExtensions: Set<String> = ["wav", "aiff", "aif", "mp3", "m4a", "caf"]
 
     /// Reads the folder name and, when an Ableton set is present, its opening tempo and meter.
     static func previewFolder(at folderURL: URL) throws -> Preview {
@@ -203,7 +203,7 @@ enum SongFolderImporter {
         let denominator = TimeSignatureChange.validDenominators.contains(settings.timeSignatureDenominator)
             ? settings.timeSignatureDenominator
             : TimeSignatureChange.defaultDenominator
-        let key = settings.baseKeyRaw.flatMap { SongMusicalKey(rawValue: $0)?.rawValue }
+        let key = settings.baseKeyRaw.flatMap { SongMusicalKey(spelling: $0)?.rawValue }
         let mode = key == nil ? nil : SongKeyMode(raw: settings.keyModeRaw).storedRaw
         return ImportSettings(
             name: name,

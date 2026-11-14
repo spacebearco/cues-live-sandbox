@@ -236,7 +236,7 @@ struct LiveGroupChannelStrip: View {
 
             Text(title)
                 .font(AppTypography.caption2Emphasized)
-                .foregroundStyle(AppColors.textOnFill)
+                .foregroundStyle(titleColor.readableTextColor)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 18, alignment: .center)

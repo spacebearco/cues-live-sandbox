@@ -8,19 +8,25 @@ import AppKit
 extension EditView {
     var clipEditorActions: ClipEditorActions {
         ClipEditorActions(
-            canSplit: !clipSelection.isEmpty,
+            canSplit: canSplitAtHeads,
             canJoin: !clipSelection.isEmpty,
             canDuplicate: !clipSelection.isEmpty,
             canDeselect: !clipSelection.isEmpty,
             canAdjustGain: !clipSelection.isEmpty,
             canNudgeGain: !clipSelection.isEmpty,
-            split: { splitSelectedClips(at: AudioEngineManager.shared.currentTime) },
+            canInsertBars: true,
+            canCopy: canCopyClips,
+            canPaste: canPasteClips,
+            split: { splitAtEditHead() },
+            splitAtPlayhead: { splitAtPlayhead() },
             join: { joinSelectedClips() },
             duplicate: { duplicateSelectedClips() },
             deselectAll: { clipSelection.deselectAll() },
             adjustGain: { beginAdjustGain() },
             nudgeGainUp: { nudgeSelectedClipGain(by: 1) },
-            nudgeGainDown: { nudgeSelectedClipGain(by: -1) }
+            nudgeGainDown: { nudgeSelectedClipGain(by: -1) },
+            insertBars: { beginInsertBars(at: playbackStart) },
+            toggleMute: { toggleMuteClips() }
         )
     }
 
@@ -69,7 +75,7 @@ extension EditView {
     }
 
     /// Where Split cuts. A range is cut at both edges. An insertion is one cut.
-    private var editSplitPoints: [TimeInterval] {
+    var editSplitPoints: [TimeInterval] {
         if let selection = editSelection, selection.end - selection.start > ClipEditing.tolerance {
             return [selection.start, selection.end]
         }
@@ -93,7 +99,7 @@ extension EditView {
     }
 
     /// Splits `ids` at each time. Pieces from an earlier cut are included in the later ones.
-    private func splitClips(_ ids: Set<UUID>, at times: [TimeInterval]) {
+    func splitClips(_ ids: Set<UUID>, at times: [TimeInterval]) {
         let canSplit = timeline.clips.contains { clip in
             guard ids.contains(clip.id) else { return false }
             return times.contains { time in
@@ -211,24 +217,52 @@ extension EditView {
         }
     }
 
-    /// Snaps the reference clip's moved edge to the beat grid and applies that change to the whole selection.
+    /// Pulls the dragged edges onto a nearby clip edge, the playhead or a section marker; otherwise
+    /// snaps the reference clip to the beat grid. Holding Control drags freely. The change applies
+    /// to the whole selection.
     private func updateClipDrag(_ request: ClipDragRequest) {
         pendingShiftDeselectID = nil
+        let snapsFreely = PointerModifiers.current.control
         switch request {
         case .move(let reference, let rawDelta, let copy):
-            let earliest = selectedClips.map(\.timelineStartSeconds).min() ?? reference.timelineStartSeconds
-            let delta = snappedToBeat(reference.timelineStartSeconds + rawDelta) - reference.timelineStartSeconds
+            let moving = selectedClips.isEmpty ? [reference] : selectedClips
+            let earliest = moving.map(\.timelineStartSeconds).min() ?? reference.timelineStartSeconds
+            let edges = moving.flatMap { [$0.timelineStartSeconds, $0.timelineEndSeconds] }
+            let delta: TimeInterval
+            if snapsFreely {
+                delta = rawDelta
+                snapGuideTime = nil
+            } else if let snap = magneticSnap(edges: edges, rawDelta: rawDelta) {
+                delta = snap.delta
+                snapGuideTime = snap.target
+            } else {
+                delta = snappedToBeat(reference.timelineStartSeconds + rawDelta) - reference.timelineStartSeconds
+                snapGuideTime = nil
+            }
             clipDrag = .move(delta: max(delta, -earliest), copy: copy)
         case .trim(let reference, let edge, let rawTime):
             let edgeTime = edge == .leading ? reference.timelineStartSeconds : reference.timelineEndSeconds
-            clipDrag = .trim(edge: edge, delta: snappedToBeat(rawTime) - edgeTime)
+            let delta: TimeInterval
+            if snapsFreely {
+                delta = rawTime - edgeTime
+                snapGuideTime = nil
+            } else if let snap = magneticSnap(edges: [edgeTime], rawDelta: rawTime - edgeTime) {
+                delta = snap.delta
+                snapGuideTime = snap.target
+            } else {
+                delta = snappedToBeat(rawTime) - edgeTime
+                snapGuideTime = nil
+            }
+            clipDrag = .trim(edge: edge, delta: delta)
         case .fade(let clipID, let edge, let fade):
             // Fades are not snapped: their length is set by ear, not by the grid.
+            snapGuideTime = nil
             clipDrag = .fade(clipID: clipID, edge: edge, fade: fade)
         }
     }
 
     private func commitClipDrag() {
+        snapGuideTime = nil
         guard let drag = clipDrag else { return }
         clipDrag = nil
         let ids = clipSelection.clipIDs
@@ -266,10 +300,14 @@ extension EditView {
     /// Split uses the edit selection, so it decides that itself.
     private func performClipMenuAction(_ action: ClipMenuAction, clipID: UUID) {
         let clipWasSelected = clipSelection.contains(clipID)
-        if action != .split, !clipWasSelected {
+        if action != .split, action != .paste, !clipWasSelected {
             clipSelection = ClipSelection([clipID])
         }
         switch action {
+        case .cut: cutClips()
+        case .copy: copyClips()
+        case .paste: pasteClips()
+        case .mute: toggleMuteClips()
         case .split: splitAtEditSelection(clickedClipID: clipID, clipWasSelected: clipWasSelected)
         case .join: joinSelectedClips()
         case .duplicate: duplicateSelectedClips()

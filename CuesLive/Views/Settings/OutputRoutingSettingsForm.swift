@@ -23,6 +23,8 @@ struct OutputRoutingSettingsForm: View {
     private var groups: [TrackGroup]
 
     var sections: Sections = .all
+    /// Show mode locks routing so nothing can be rerouted mid-gig.
+    @AppStorage(SetlistPlayMode.storageKey) private var playMode = SetlistPlayMode.defaultMode
     var onRoutingChanged: (() -> Void)?
 
     @State private var devices: [AudioOutputDevice] = []
@@ -47,15 +49,24 @@ struct OutputRoutingSettingsForm: View {
 
     var body: some View {
         Form {
-            if sections.contains(.device) {
-                deviceSection
+            if playMode == .show {
+                Section {
+                    Label(SetlistPlayMode.lockedExplanation, systemImage: "lock.fill")
+                        .foregroundStyle(AppColors.textSecondary)
+                }
             }
-            if sections.contains(.groupOutputs) {
-                groupOutputsSection
+            Group {
+                if sections.contains(.device) {
+                    deviceSection
+                }
+                if sections.contains(.groupOutputs) {
+                    groupOutputsSection
+                }
+                if sections.contains(.timecode) {
+                    timecodeSection
+                }
             }
-            if sections.contains(.timecode) {
-                timecodeSection
-            }
+            .disabled(playMode == .show)
         }
         .formStyle(.grouped)
         .sheet(isPresented: $showingTestAllOutputs) {

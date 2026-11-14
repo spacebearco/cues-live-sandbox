@@ -19,7 +19,7 @@ struct MIDICommand: Codable, Identifiable, Hashable {
 /// A reusable MIDI device profile. Defines a physical CoreMIDI destination + channel
 /// and a palette of named commands that MIDI track events can reference.
 @Model
-final class MIDIDevice {
+final class MIDIDevice: Identifiable {
     var id: UUID
     var name: String
     /// CoreMIDI destination identity (persisted by unique ID with name fallback).

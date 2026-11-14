@@ -1,20 +1,12 @@
 import SwiftUI
 
 /// Tap seeks; drag is left to the enclosing scroll view for panning.
-/// When arrangement sections are provided, a tap inside a section jumps to that
-/// section (via `onSectionTap`) instead of the exact tap time — matching Mac.
+/// Every tap reports its time; the setlist decides what a tap inside a section does
+/// (`LivePlaybackView.handleWaveformClick`).
 struct WaveformSeekGestureModifier: ViewModifier {
-    struct SectionHitTarget: Identifiable {
-        let id: UUID
-        let start: TimeInterval
-        let end: TimeInterval
-    }
-
     let isEnabled: Bool
     let contentWidth: CGFloat
     let window: LiveLaneWindow
-    var sections: [SectionHitTarget] = []
-    var onSectionTap: ((UUID) -> Void)? = nil
     let onSeek: (TimeInterval) -> Void
 
     func body(content: Content) -> some View {
@@ -24,32 +16,11 @@ struct WaveformSeekGestureModifier: ViewModifier {
                 .simultaneousGesture(
                     SpatialTapGesture()
                         .onEnded { event in
-                            let time = window.time(at: event.location.x, width: contentWidth)
-                            if let onSectionTap, let sectionID = sectionID(containing: time) {
-                                onSectionTap(sectionID)
-                            } else {
-                                onSeek(time)
-                            }
+                            onSeek(window.time(at: event.location.x, width: contentWidth))
                         }
                 )
         } else {
             content
         }
-    }
-
-    private func sectionID(containing time: TimeInterval) -> UUID? {
-        guard !sections.isEmpty else { return nil }
-
-        for section in sections {
-            if time >= section.start && time < section.end {
-                return section.id
-            }
-        }
-
-        if let last = sections.last, time >= last.start && time <= last.end {
-            return last.id
-        }
-
-        return nil
     }
 }

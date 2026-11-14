@@ -59,15 +59,16 @@ final class SetlistViewModelTests: XCTestCase {
             for: entries[0],
             context: context
         )
-        viewModel.setTransition(.stop, for: entries[1], context: context)
+        XCTAssertEqual(entries[2].transition, .stop, "New songs stop at their end by default")
+        viewModel.setTransition(.continue, for: entries[1], context: context)
 
         // Move "A" (the overlap entry) to the end.
         viewModel.moveEntries(in: setlist, from: IndexSet(integer: 0), to: 3, context: context)
 
         XCTAssertEqual(titles(of: setlist), ["B", "C", "A"])
-        XCTAssertEqual(entries[0].transition, .continue)
+        XCTAssertEqual(entries[0].transition, .stop, "A moved overlap falls back to the default")
         XCTAssertNil(entries[0].overlapStartOffsetSeconds)
-        XCTAssertEqual(entries[1].transition, .stop, "Unmoved entries keep their transition")
+        XCTAssertEqual(entries[1].transition, .continue, "Unmoved entries keep their transition")
     }
 
     func testRemoveEntryRenumbersSortOrder() throws {

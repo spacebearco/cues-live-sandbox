@@ -7,7 +7,7 @@ import Foundation
 ///
 /// Clips re-timed by a tempo change read their file faster or slower; the track's
 /// `LiveStretcher` keeps them at their original pitch.
-struct ArrangementTimelineMapper: Sendable {
+struct ArrangementTimelineMapper: Sendable, Equatable {
     private let clips: [TrackClip]
     private let sourceStart: TimeInterval
     private let sourceEnd: TimeInterval
@@ -16,7 +16,8 @@ struct ArrangementTimelineMapper: Sendable {
     let hasRetimedClips: Bool
 
     init(clips: [TrackClip], fileDuration: TimeInterval) {
-        self.clips = clips.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
+        // A muted clip plays nothing, exactly like a gap.
+        self.clips = clips.filter { !$0.isMuted }.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
         sourceStart = 0
         sourceEnd = fileDuration
         usesClips = true
@@ -115,5 +116,58 @@ struct ArrangementTimelineMapper: Sendable {
     func fadedClip(atMasterTimeline master: TimeInterval) -> TrackClip? {
         guard usesClips, let clip = clip(containing: master), clip.hasFades else { return nil }
         return clip
+    }
+
+    /// Fade envelope gain at `master`; unity outside a faded clip.
+    private func fadeGain(atMasterTimeline master: TimeInterval) -> Float {
+        guard let clip = fadedClip(atMasterTimeline: master) else { return 1 }
+        return clip.fadeGain(atOffset: master - clip.timelineStartSeconds)
+    }
+
+    /// How finely `firstDifference` compares two mappings.
+    private static let comparisonStep: TimeInterval = 0.005
+
+    /// The first master-timeline time in `[master, master + window]` where `other` plays
+    /// different audio (another stretch of the file, another gain or speed, or silence instead
+    /// of sound), or `nil` when both play the same throughout. Checked every 5 ms.
+    func firstDifference(from other: ArrangementTimelineMapper, at master: TimeInterval, within window: TimeInterval) -> TimeInterval? {
+        var time = max(0, master)
+        let end = master + max(0, window)
+        while time <= end {
+            if !playsSameAudio(as: other, at: time) {
+                return time
+            }
+            time += Self.comparisonStep
+        }
+        return nil
+    }
+
+    private func playsSameAudio(as other: ArrangementTimelineMapper, at time: TimeInterval) -> Bool {
+        let mine = sourceSeconds(atMasterTimeline: time)
+        let theirs = other.sourceSeconds(atMasterTimeline: time)
+        switch (mine, theirs) {
+        case (nil, nil):
+            return true
+        case let (mine?, theirs?):
+            return abs(mine - theirs) < 1e-6
+                && linearGain(atMasterTimeline: time) == other.linearGain(atMasterTimeline: time)
+                && abs(fadeGain(atMasterTimeline: time) - other.fadeGain(atMasterTimeline: time)) < 1e-4
+                && abs(playbackRate(atMasterTimeline: time) - other.playbackRate(atMasterTimeline: time)) < TrackClip.rateTolerance
+        default:
+            return false
+        }
+    }
+
+    /// Where in the file the next clip after `master` starts reading, when that clip begins
+    /// within `window` and does not simply carry on from the clip playing now. Streaming
+    /// sources read it in ahead so a jump to another part of the file is not silent.
+    func upcomingJumpSource(afterMasterTimeline master: TimeInterval, within window: TimeInterval) -> TimeInterval? {
+        guard usesClips,
+              let next = clips.first(where: { $0.timelineStartSeconds > master + Self.boundaryTolerance }),
+              next.timelineStartSeconds <= master + window else { return nil }
+        if let current = clip(containing: master), current.continues(into: next, tolerance: 1e-4) {
+            return nil
+        }
+        return next.sourceStartSeconds
     }
 }

@@ -59,7 +59,9 @@ enum OutputRoutingStore {
     static func route(for groupID: UUID, deviceUID: String?, in context: ModelContext) -> OutputDestination {
         let key = deviceKey(deviceUID)
         let routes = (try? context.fetch(FetchDescriptor<GroupOutputRoute>())) ?? []
-        let fallback: OutputDestination = groupID == ungroupedRouteID ? .none : .defaultDestination
+        let fallback: OutputDestination = groupID == ungroupedRouteID || groupID == timecodeGroupID(in: context)
+            ? .none
+            : .defaultDestination
         return routes.first { $0.groupID == groupID && $0.deviceUID == key }?.destination ?? fallback
     }
 
@@ -103,6 +105,10 @@ enum OutputRoutingStore {
         for route in routes where route.groupID != ungroupedRouteID && route.deviceUID == key {
             routesByGroupID[route.groupID] = route.destination
         }
+        // Timecode is a control signal, not program audio: until routed, it goes nowhere.
+        if let timecodeID = timecodeGroupID(in: context), routesByGroupID[timecodeID] == nil {
+            routesByGroupID[timecodeID] = OutputDestination.none
+        }
 
         return OutputRoutingSnapshot(
             deviceUID: config.selectedDeviceUID,
@@ -120,6 +126,12 @@ enum OutputRoutingStore {
             $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
                 .caseInsensitiveCompare(TrackGroupStore.guideGroupName) == .orderedSame
         }?.id
+    }
+
+    /// The "Timecode" group, which defaults to No Output on every device.
+    static func timecodeGroupID(in context: ModelContext) -> UUID? {
+        let groups = (try? context.fetch(FetchDescriptor<TrackGroup>())) ?? []
+        return groups.first(where: TimecodePlaybackSupport.isTimecodeGroup)?.id
     }
 
     static func guideDestination(snapshot: OutputRoutingSnapshot) -> OutputDestination {

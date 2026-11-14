@@ -63,100 +63,6 @@ enum TrackMixReadout {
     }
 }
 
-/// Fader-style readout box. Drag horizontally to change the value, click to type one.
-/// Return commits typed text, Escape cancels.
-struct TrackValueField: View {
-    let text: String
-    /// Portion of the box (0…1 from the leading edge) filled to show the current value.
-    let fill: ClosedRange<CGFloat>
-    /// Horizontal drag distance in points from where the drag began; `isFinal` on release.
-    let onDrag: (CGFloat, _ isFinal: Bool) -> Void
-    /// Double-click: back to the default value.
-    let onReset: () -> Void
-    /// Returns `true` when the typed text was valid and applied.
-    let onCommit: (String) -> Bool
-
-    @State private var isEditing = false
-    @State private var draft = ""
-    @FocusState private var isFocused: Bool
-
-    private let boxHeight: CGFloat = 22
-    private let cornerRadius: CGFloat = 4
-
-    var body: some View {
-        ZStack {
-            if isEditing {
-                TextField("", text: $draft)
-                    .textFieldStyle(.plain)
-                    .multilineTextAlignment(.center)
-                    .focused($isFocused)
-                    .focusEffectDisabled()
-                    .tint(.clear)
-                    .onSubmit(commit)
-                    #if os(macOS)
-                    .onExitCommand { isEditing = false }
-                    #endif
-                    .onChange(of: isFocused) { _, focused in
-                        if !focused, isEditing { commit() }
-                    }
-            } else {
-                Text(text)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-        }
-        .font(AppTypography.Compact.mixReadout.monospacedDigit())
-        .foregroundStyle(AppColors.textPrimary)
-        .frame(maxWidth: .infinity)
-        .frame(height: boxHeight)
-        .background {
-            GeometryReader { geometry in
-                let width = geometry.size.width
-                ZStack(alignment: .bottomLeading) {
-                    Rectangle().fill(AppColors.surface)
-
-                    Rectangle()
-                        .fill(AppColors.Mixer.readoutLevel)
-                        .frame(width: width * (fill.upperBound - fill.lowerBound))
-                        .offset(x: width * fill.lowerBound)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 3)
-                .onChanged { drag in
-                    guard !isEditing else { return }
-                    onDrag(drag.translation.width, false)
-                }
-                .onEnded { drag in
-                    guard !isEditing else { return }
-                    onDrag(drag.translation.width, true)
-                }
-        )
-        .gesture(
-            TapGesture(count: 2)
-                .onEnded {
-                    guard !isEditing else { return }
-                    onReset()
-                }
-                .exclusively(before: TapGesture().onEnded {
-                    guard !isEditing else { return }
-                    draft = text
-                    isEditing = true
-                    isFocused = true
-                })
-        )
-    }
-
-    private func commit() {
-        guard isEditing else { return }
-        isEditing = false
-        _ = onCommit(draft.trimmingCharacters(in: .whitespaces))
-    }
-}
-
 struct TrackVolumeField: View {
     @Binding var volume: Double
     /// Audible update while dragging; nothing is persisted until `onEditingEnded`.
@@ -168,9 +74,11 @@ struct TrackVolumeField: View {
     private let dbPerPoint = 0.5
 
     var body: some View {
-        TrackValueField(
+        let level = CGFloat(1 - MixerFaderScale.normalizedPosition(forLinearGain: volume))
+        TrackKnobField(
             text: TrackMixReadout.volumeText(forGain: volume),
-            fill: 0...CGFloat(1 - MixerFaderScale.normalizedPosition(forLinearGain: volume)),
+            fill: 0...level,
+            pointer: level,
             onDrag: { dx, isFinal in
                 let start = dragStartDB ?? MixerFaderScale.decibels(forLinearGain: volume)
                 dragStartDB = isFinal ? nil : start
@@ -190,7 +98,7 @@ struct TrackVolumeField: View {
                 return true
             }
         )
-        .help("Volume in dB (max +6). Drag to adjust, click to type a value, double-click to reset.")
+        .help("Gain in dB (max +6). Drag the knob up or right, click the number to type, double-click the knob to reset.")
     }
 }
 
@@ -205,9 +113,10 @@ struct TrackPanField: View {
 
     var body: some View {
         let position = CGFloat((pan + 1) / 2)
-        TrackValueField(
+        TrackKnobField(
             text: TrackMixReadout.panText(forPan: pan),
             fill: min(position, 0.5)...max(position, 0.5),
+            pointer: position,
             onDrag: { dx, isFinal in
                 let start = dragStartPan ?? pan
                 dragStartPan = isFinal ? nil : start
@@ -226,7 +135,7 @@ struct TrackPanField: View {
                 return true
             }
         )
-        .help("Pan from -50 (left) to 50 (right). Drag to adjust, click to type a value, double-click to reset.")
+        .help("Pan from -50 (left) to 50 (right). Drag the knob, click the number to type, double-click the knob to reset.")
     }
 }
 

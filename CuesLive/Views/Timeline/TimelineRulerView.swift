@@ -253,6 +253,8 @@ struct TimelineRulerView: View {
     let onDeleteTempoMarker: (TempoChange) -> Void
     let onMoveTempoMarker: (TempoChange, TimeInterval) -> Void
     let onTempoOperations: () -> Void
+    var onDuplicateSection: (SongSection) -> Void = { _ in }
+    var onInsertBars: (TimeInterval) -> Void = { _ in }
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -320,6 +322,8 @@ struct TimelineRulerView: View {
             onAddSection: onAddSection,
             onRenameSection: onRenameSection,
             onRemoveMarker: onRemoveMarker,
+            onDuplicateSection: onDuplicateSection,
+            onInsertBars: onInsertBars,
             previewSections: previewSections,
             onEditSectionEdge: onEditSectionEdge,
             tempoChanges: tempoChanges,

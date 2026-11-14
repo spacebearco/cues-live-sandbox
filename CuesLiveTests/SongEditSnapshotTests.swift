@@ -65,7 +65,7 @@ final class SongEditSnapshotTests: XCTestCase {
         snapshot.applyMIDILaneHeights(to: song)
 
         XCTAssertEqual(song.baseKeyRaw, "Bb")
-        XCTAssertEqual(song.displayedKeyText, "Bb")
+        XCTAssertEqual(song.displayedKeyText, "A#/Bb")
 
         let restored = SongEditSnapshot.capture(
             song: song,

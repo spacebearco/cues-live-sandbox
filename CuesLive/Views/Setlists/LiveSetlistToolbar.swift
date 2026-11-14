@@ -29,6 +29,10 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         }
 
         ToolbarItem(placement: .automatic) {
+            SetlistModeControls()
+        }
+
+        ToolbarItem(placement: .automatic) {
             InputMappingToolbarButton()
         }
 

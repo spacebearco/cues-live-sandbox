@@ -56,6 +56,8 @@ struct SongSection: Identifiable, Hashable, Sendable {
     let timelineStartSeconds: TimeInterval
     let timelineEndSeconds: TimeInterval
     let loops: Bool
+    /// The color picked for this section, or `nil` for the automatic one.
+    var colorIndex: Int?
 
     var duration: TimeInterval { timelineEndSeconds - timelineStartSeconds }
 
@@ -93,7 +95,8 @@ struct SongSection: Identifiable, Hashable, Sendable {
                 name: marker.name,
                 timelineStartSeconds: marker.startSeconds,
                 timelineEndSeconds: end,
-                loops: marker.loops
+                loops: marker.loops,
+                colorIndex: marker.colorIndex
             )
         }
     }
@@ -106,6 +109,18 @@ extension Array where Element == SongSection {
 
     var loopSectionIDs: Set<UUID> {
         Set(filter(\.loops).map(\.id))
+    }
+
+    /// Where ← lands from `time`: the start of the section `time` is in, or the one before it
+    /// when `time` is already within `settle` of that start (so repeated presses keep going back).
+    func previousSectionStart(from time: TimeInterval, settle: TimeInterval = 0.5) -> TimeInterval? {
+        let starts = map(\.timelineStartSeconds).sorted()
+        return starts.last { $0 < time - settle } ?? starts.first.map { Swift.min($0, time) }
+    }
+
+    /// Where → lands from `time`: the start of the next section, or `nil` after the last one.
+    func nextSectionStart(from time: TimeInterval) -> TimeInterval? {
+        map(\.timelineStartSeconds).sorted().first { $0 > time + 0.001 }
     }
 
     func loopSectionCandidate(

@@ -12,6 +12,9 @@ extension SongLibraryPanel {
             Button("Add to Setlist", systemImage: "text.badge.plus") {
                 onAddToSetlist(song)
             }
+            Button("Key, Tempo & Meter…", systemImage: "slider.horizontal.3") {
+                songPendingQuickEdit = song
+            }
             Divider()
             Button("Rename…", systemImage: "character.cursor.ibeam") {
                 songPendingRename = song
@@ -84,6 +87,9 @@ extension SongLibraryPanel {
     /// Attaches the alerts, confirmations, and sheets the library's actions present.
     func songActionDialogs<Content: View>(on content: Content) -> some View {
         content
+            .sheet(item: $songPendingQuickEdit) { song in
+                SongQuickEditPopover(song: song)
+            }
             .confirmationDialog(
                 deleteConfirmationTitle,
                 isPresented: Binding(

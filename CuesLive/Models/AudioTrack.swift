@@ -23,6 +23,9 @@ final class AudioTrack {
     var sourceDurationSeconds: Double?
     /// Lane height in points. Missing or out-of-range values display at the default.
     var laneHeight: Double = TrackLaneHeight.storedDefault
+    /// Plays only this channel of the file (0 left, 1 right) on both sides, after Split to Mono.
+    /// `nil` plays the file as recorded.
+    var sourceChannel: Int?
 
     var mediaPathStyle: MediaPathStyle? {
         get {

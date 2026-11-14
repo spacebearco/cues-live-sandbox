@@ -42,13 +42,15 @@ final class AudioEngineManager {
         }
     }
 
-    private let engine = AVAudioEngine()
-    private let masterMixer = AVAudioMixerNode()
-    private let announcementSource = AnnouncementSource()
-    private var isAnnouncementPlayerWired = false
+    let engine = AVAudioEngine()
+    let masterMixer = AVAudioMixerNode()
+    /// The music tracks' post-fader mix, read by the setlist meter.
+    let mixMeterBus = MixMeterBus()
+    let announcementSource = AnnouncementSource()
+    var isAnnouncementPlayerWired = false
     private let transport = AudioPlaybackTransport()
     private let midiScheduler: MIDIScheduler
-    private(set) var tracks: [UUID: TrackState] = [:]
+    var tracks: [UUID: TrackState] = [:]
     private var scheduledOverlapStartTime: TimeInterval?
     private var overlapStartHandler: (() -> Void)?
     private var didNotifyPlaybackFinished = false
@@ -56,8 +58,8 @@ final class AudioEngineManager {
     private var playbackTimer: Timer?
     /// Nil until the song's timeline is applied; tracks then play their trimmed files linearly.
     private(set) var playbackLayout: SongPlaybackLayout?
-    private var routingSnapshot: OutputRoutingSnapshot?
-    private var groupMixSnapshot = GroupMixSnapshot.default
+    var routingSnapshot: OutputRoutingSnapshot?
+    var groupMixSnapshot = GroupMixSnapshot.default
     private var tempoChanges: [TempoChange] = []
     private var timeSignatureChanges: [TimeSignatureChange] = []
 
@@ -128,7 +130,7 @@ final class AudioEngineManager {
         announcementSource.play(stem)
     }
 
-    private func wireAnnouncementPlayerIfNeeded() {
+    func wireAnnouncementPlayerIfNeeded() {
         guard !isAnnouncementPlayerWired, let announcementSource else { return }
         if announcementSource.sourceNode.engine == nil {
             engine.attach(announcementSource.sourceNode)
@@ -140,7 +142,7 @@ final class AudioEngineManager {
     }
 
     /// Smart Guide shares the Cues group's fader and mute with the Cues track group.
-    private func applyAnnouncementGain() {
+    func applyAnnouncementGain() {
         guard let announcementSource else { return }
         let snapshot = groupMixSnapshot
         guard let guideGroupID = routingSnapshot?.guideGroupID else {
@@ -161,7 +163,7 @@ final class AudioEngineManager {
     }
     #endif
 
-    private func applyStableMaximumFramesToRender() {
+    func applyStableMaximumFramesToRender() {
         engine.outputNode.auAudioUnit.maximumFramesToRender = AudioOutputDeviceService.stableBufferFrameSize
     }
 
@@ -197,6 +199,7 @@ final class AudioEngineManager {
                 loadedTracks[payload.id] = try buildTrackState(for: payload)
             }
             tracks = loadedTracks
+            configureMixMeter()
 
             // A missing device must not fail the load; recovery waits for the output.
             do {
@@ -305,6 +308,7 @@ final class AudioEngineManager {
     }
 
     func setArrangement(_ layout: SongPlaybackLayout) {
+        guard layout != playbackLayout else { return }
         if isPlaying {
             refreshCurrentTimeFromEngine()
         }
@@ -676,27 +680,6 @@ final class AudioEngineManager {
         refreshTrackMappers()
     }
 
-    /// Audible-only volume/pan update for dragging a fader: skips the duration and
-    /// mapper refresh that `updateTrackSettings` does.
-    func applyLiveTrackMix(id: UUID, volume: Float, pan: Float) {
-        guard var track = tracks[id] else { return }
-        track.settings.volume = volume
-        track.settings.pan = pan
-        tracks[id] = track
-        applyAllMixSettings()
-    }
-
-    func applyGroupMix(_ snapshot: GroupMixSnapshot) {
-        groupMixSnapshot = snapshot
-        applyAllMixSettings()
-    }
-
-    func updateTrackGroup(id: UUID, groupID: UUID?) {
-        guard var track = tracks[id] else { return }
-        track.groupID = groupID
-        tracks[id] = track
-    }
-
     /// Rewires the loaded tracks onto `routing` without replacing their players.
     func applyOutputRoutingKeepingTracks(_ routing: OutputRoutingSnapshot) {
         guard !tracks.isEmpty else {
@@ -727,10 +710,6 @@ final class AudioEngineManager {
     func reapplyOutputRoutingIfNeeded() {
         guard let routingSnapshot else { return }
         applyOutputRoutingKeepingTracks(routingSnapshot)
-    }
-
-    func applyProvisionalGroupVolume(groupID: UUID?, volume: Float) {
-        applyGroupMix(groupMixSnapshot.replacingVolume(groupID: groupID, volume: volume))
     }
 
     func refreshGroupMeters() {
@@ -770,50 +749,6 @@ final class AudioEngineManager {
         guard !trackMeterLevels.isEmpty || !groupMeterLevels.isEmpty else { return }
         trackMeterLevels = [:]
         groupMeterLevels = [:]
-    }
-
-    func groupMeterLevel(for groupID: UUID?) -> Float {
-        let key = groupID ?? OutputRoutingStore.ungroupedRouteID
-        return groupMeterLevels[key] ?? 0
-    }
-
-    func applyAllMixSettings() {
-        let anySolo = tracks.values.contains { $0.settings.isSolo }
-        let snapshot = groupMixSnapshot
-
-        for id in tracks.keys {
-            guard let track = tracks[id] else { continue }
-            var effectiveVolume = track.settings.volume
-            var isAudible = true
-
-            if anySolo {
-                if !track.settings.isSolo, !track.settings.ignoresSolo {
-                    effectiveVolume = 0
-                    isAudible = false
-                }
-            } else if track.settings.isMuted {
-                effectiveVolume = 0
-                isAudible = false
-            }
-
-            let groupVolume: Float
-            let groupMuted: Bool
-            if let groupID = track.groupID {
-                groupVolume = snapshot.volumeByGroupID[groupID] ?? 1
-                groupMuted = snapshot.mutedGroupIDs.contains(groupID)
-            } else {
-                groupVolume = snapshot.ungroupedVolume
-                groupMuted = snapshot.ungroupedIsMuted
-            }
-            effectiveVolume *= groupMuted ? 0 : groupVolume
-
-            track.memoryPlayer.updateMix(
-                volume: effectiveVolume,
-                pan: track.settings.pan,
-                isAudible: isAudible
-            )
-        }
-        applyAnnouncementGain()
     }
 
     private func makeMapper(
@@ -906,7 +841,7 @@ final class AudioEngineManager {
         tracks.removeAll()
     }
 
-    private func stopEngineForGraphChanges() {
+    func stopEngineForGraphChanges() {
         if engine.isRunning {
             engine.stop()
         }
@@ -914,7 +849,7 @@ final class AudioEngineManager {
         isAnnouncementPlayerWired = false
     }
 
-    private func startEngineIfNeeded() throws {
+    func startEngineIfNeeded() throws {
         isHardwareSuspended = false
         applyStableMaximumFramesToRender()
         if !engine.isRunning {
@@ -1041,112 +976,6 @@ final class AudioEngineManager {
         failedOutputRecoveryAttempts = 0
         outputRecoveryGeneration += 1
         isOutputLost = false
-    }
-
-    private func wireTrackOutputs(routing: OutputRoutingSnapshot) throws {
-        stopEngineForGraphChanges()
-        let boundRequestedDevice = adoptOutputDevice(routing.deviceUID)
-        // A stale/missing device UID must not force multi-channel maps onto whatever
-        // output the engine actually opened — that leaves the graph silent.
-        let channelCount = (routing.deviceUID != nil && !boundRequestedDevice)
-            ? 2
-            : outputChannelCount(for: routing)
-        disconnectTrackOutputs()
-        connectTrackOutputs(routing: routing, channelCount: channelCount)
-        try startEngineIfNeeded()
-    }
-
-    private func adoptOutputDevice(_ deviceUID: String?) -> Bool {
-        guard let deviceUID else { return true }
-        // Bind only this engine's output unit — do not change the system default.
-        let bound = AudioOutputDeviceService.bindOutputDevice(uid: deviceUID, to: engine)
-        applyStableMaximumFramesToRender()
-        return bound
-    }
-
-    private func disconnectTrackOutputs() {
-        for track in tracks.values {
-            engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
-            engine.disconnectNodeOutput(track.timePitchNode)
-        }
-    }
-
-    private func connectTrackOutputs(routing: OutputRoutingSnapshot, channelCount: Int) {
-        restoreFullOutputGain()
-
-        // Channel-map routing is also needed on a stereo-only (2-channel) device
-        // whenever a group is pinned to a single mono channel instead of the
-        // default full stereo pair — otherwise every group would always spread
-        // across both channels regardless of its configured destination.
-        if channelCount > 2 || routing.hasNonDefaultRouting {
-            let routeTracks = tracks.values.map { track in
-                (
-                    // Channel maps must be applied on the source node after a
-                    // multi-channel connection. TimePitch stays mono and cannot
-                    // carry a device-width channel map.
-                    node: track.memoryPlayer.sourceNode as AVAudioNode,
-                    format: track.sourceFormat,
-                    destination: OutputRoutingStore.destination(for: track.groupID, snapshot: routing)
-                )
-            }
-
-            var allRoutes = routeTracks
-            if !routeTracks.isEmpty, let announcementSource {
-                if announcementSource.sourceNode.engine == nil {
-                    engine.attach(announcementSource.sourceNode)
-                }
-                allRoutes.append((
-                    node: announcementSource.sourceNode as AVAudioNode,
-                    format: announcementSource.format,
-                    destination: OutputRoutingStore.guideDestination(snapshot: routing)
-                ))
-            }
-
-            if OutputRoutingManager.applyChannelMapRouting(
-                engine: engine,
-                tracks: allRoutes,
-                outputChannelCount: max(channelCount, 2)
-            ) {
-                // The callout node is now routed directly with the track nodes.
-                isAnnouncementPlayerWired = true
-                return
-            }
-        }
-
-        connectTracksToMasterMixer()
-    }
-
-    private func connectTracksToMasterMixer() {
-        restoreFullOutputGain()
-
-        engine.disconnectNodeOutput(engine.mainMixerNode)
-        let outputFormat = engine.outputNode.outputFormat(forBus: 0)
-        engine.connect(engine.mainMixerNode, to: engine.outputNode, format: outputFormat)
-
-        for track in tracks.values {
-            connectTrackToMasterMixer(track)
-        }
-        isAnnouncementPlayerWired = false
-        wireAnnouncementPlayerIfNeeded()
-    }
-
-    private func connectTrackToMasterMixer(_ track: TrackState) {
-        engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
-        engine.disconnectNodeOutput(track.timePitchNode)
-        OutputRoutingManager.clearChannelMap(on: track.memoryPlayer.sourceNode)
-        OutputRoutingManager.clearChannelMap(on: track.timePitchNode)
-        engine.connect(track.memoryPlayer.sourceNode, to: track.timePitchNode, format: track.sourceFormat)
-        engine.connect(track.timePitchNode, to: masterMixer, format: track.sourceFormat)
-    }
-
-    private func restoreFullOutputGain() {
-        masterMixer.outputVolume = 1
-        engine.mainMixerNode.outputVolume = 1
-    }
-
-    private func outputChannelCount(for routing: OutputRoutingSnapshot) -> Int {
-        let deviceCount = AudioOutputDeviceService.channelCount(for: routing.deviceUID)
-        return max(routing.channelCount, deviceCount, 2)
     }
 
     private func quantizeTimelineTime(_ time: TimeInterval) -> TimeInterval {

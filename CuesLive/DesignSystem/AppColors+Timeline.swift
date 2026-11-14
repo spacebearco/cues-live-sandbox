@@ -45,8 +45,9 @@ extension AppColors {
 
         /// Playback playhead line.
         static let playhead = Color(.timelinePlayhead)
-        /// Insertion cursor shown while stopped.
-        static let insertionCursor = Color(.timelineInsertionCursor)
+        /// The edit head, where clicks land and Split, Paste and Play act. Blue, so it never
+        /// reads as the red playhead.
+        static let editHead = Color(.timelineEditHead)
         static let playheadHandleFill = Color(.timelinePlayheadHandleFill)
         static let playheadHandleBorder = Color(.timelinePlayheadHandleBorder)
 

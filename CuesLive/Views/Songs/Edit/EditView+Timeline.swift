@@ -165,6 +165,7 @@ extension EditView {
             playRangePreview: playRangePreview,
             laneHeights: laneFrames.rows.map(\.height),
             showsPlayhead: viewModel.isActiveSetlistSong,
+            editHeadTime: editHeadTime,
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
             onWheelZoom: zoomTimeline(by:),
@@ -177,6 +178,8 @@ extension EditView {
             headers: { trackHeaderList }
         )
         .simultaneousGesture(timelinePinchGesture)
+        .overlay(alignment: .top) { detectingSectionsStatus }
+        .animation(AppAnimation.fadeQuick, value: isDetectingSections)
     }
 
     private var trackTimelineScrollContent: some View {
@@ -197,7 +200,7 @@ extension EditView {
             )
 
             clipRangeSelectionOverlay
-            insertionCursorOverlay
+            snapGuideOverlay
         }
         .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .topLeading)
         // On macOS the lanes live in their own AppKit scroll view, which does not pass
@@ -288,33 +291,6 @@ extension EditView {
             }
             .frame(width: timelineContentWidth, height: trackAreaHeight, alignment: .topLeading)
             .allowsHitTesting(false)
-        }
-    }
-
-    private var insertionRows: [Int] {
-        displayedTrackIDs.enumerated().compactMap { index, id in
-            selectedTrackIDs.contains(id) ? index : nil
-        }
-    }
-
-    private var showsInsertionCursor: Bool {
-        guard !audioEngine.isPlaying, !insertionRows.isEmpty else { return false }
-        if let selection = editSelection, selection.end - selection.start > ClipEditing.tolerance {
-            return false
-        }
-        return true
-    }
-
-    @ViewBuilder
-    private var insertionCursorOverlay: some View {
-        if showsInsertionCursor {
-            TimelineInsertionCursor(
-                time: insertionTime,
-                duration: timelineDuration,
-                contentWidth: timelineContentWidth,
-                rows: insertionRows.compactMap { laneFrames.rows.indices.contains($0) ? laneFrames.rows[$0] : nil },
-                areaHeight: trackAreaHeight
-            )
         }
     }
 

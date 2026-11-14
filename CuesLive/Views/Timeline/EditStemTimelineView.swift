@@ -52,6 +52,8 @@ struct EditStemTimelineView<
     let laneHeights: [CGFloat]
     /// False hides the playing playhead, for a song the engine is not playing.
     var showsPlayhead = true
+    /// Where the edit head sits, or `nil` while a time range is selected.
+    let editHeadTime: TimeInterval?
     @Binding var timelineViewportWidth: CGFloat
     @FocusState.Binding var isTimelineFocused: Bool
     /// Command- or Option-scroll over the lanes, with the factor to multiply the zoom by.
@@ -161,6 +163,19 @@ struct EditStemTimelineView<
                     .allowsHitTesting(false)
                 }
 
+            }
+            .overlay(alignment: .topLeading) {
+                if let editHeadTime {
+                    TimelineEditHead(
+                        model: scrollModel,
+                        time: editHeadTime,
+                        duration: timelineDuration,
+                        contentWidth: timelineContentWidth,
+                        viewportWidth: timelineColumnWidth,
+                        height: TimelineLayout.rulerTotalHeight + tracksViewportHeight
+                    )
+                    .padding(.leading, TimelineLayout.trackHeaderWidth)
+                }
             }
             .overlay(alignment: .topLeading) {
                 if showsPlayhead {

@@ -18,6 +18,7 @@ struct TrackEditSnapshot: Equatable, Hashable {
     var groupName: String?
     var includeInKeyChange: Bool
     var laneHeight: Double
+    var sourceChannel: Int?
 }
 
 struct SongMetadataSnapshot: Equatable, Hashable {
@@ -80,7 +81,8 @@ struct SongEditSnapshot: Equatable {
                     trimEndSeconds: track.trimEndSeconds,
                     groupName: track.group?.name,
                     includeInKeyChange: track.includeInKeyChange,
-                    laneHeight: track.laneHeight
+                    laneHeight: track.laneHeight,
+                    sourceChannel: track.sourceChannel
                 )
             },
             midiLaneHeights: Dictionary(
@@ -136,6 +138,7 @@ struct SongEditSnapshot: Equatable {
             track.trimEndSeconds = trackSnapshot.trimEndSeconds
             track.includeInKeyChange = trackSnapshot.includeInKeyChange
             track.laneHeight = trackSnapshot.laneHeight
+            track.sourceChannel = trackSnapshot.sourceChannel
             if let groupName = trackSnapshot.groupName {
                 track.group = groupsByName[groupName]
             } else {

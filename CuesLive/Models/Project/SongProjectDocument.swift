@@ -77,6 +77,9 @@ struct ProjectTrackMix: Codable, Hashable {
     var isSolo: Bool
     var trimStartSeconds: Double
     var trimEndSeconds: Double?
+    /// Set after Split to Mono: the one channel of the file this track plays. Missing in
+    /// older files, which play every channel.
+    var sourceChannel: Int?
 
     init(from track: AudioTrack) {
         volume = track.volume
@@ -85,6 +88,7 @@ struct ProjectTrackMix: Codable, Hashable {
         isSolo = track.isSolo
         trimStartSeconds = track.trimStartSeconds
         trimEndSeconds = track.trimEndSeconds
+        sourceChannel = track.sourceChannel
     }
 
     init(from decoder: Decoder) throws {
@@ -95,6 +99,7 @@ struct ProjectTrackMix: Codable, Hashable {
         isSolo = try container.decode(Bool.self, forKey: .isSolo)
         trimStartSeconds = try container.decode(Double.self, forKey: .trimStartSeconds)
         trimEndSeconds = try container.decodeIfPresent(Double.self, forKey: .trimEndSeconds)
+        sourceChannel = try container.decodeIfPresent(Int.self, forKey: .sourceChannel)
     }
 
     func apply(to track: AudioTrack) {
@@ -104,6 +109,7 @@ struct ProjectTrackMix: Codable, Hashable {
         track.isSolo = isSolo
         track.trimStartSeconds = trimStartSeconds
         track.trimEndSeconds = trimEndSeconds
+        track.sourceChannel = sourceChannel
     }
 }
 

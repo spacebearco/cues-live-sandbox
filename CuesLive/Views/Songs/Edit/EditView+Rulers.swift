@@ -75,7 +75,9 @@ extension EditView {
             },
             onDeleteTempoMarker: deleteTempoMarker,
             onMoveTempoMarker: moveTempoMarker,
-            onTempoOperations: { showingTempoOperations = true }
+            onTempoOperations: { showingTempoOperations = true },
+            onDuplicateSection: { duplicateSection($0.id) },
+            onInsertBars: beginInsertBars(at:)
         )
         .frame(height: TimelineLayout.topRulerHeight)
         .id("\(displaySections.map(\.id))|\(timelineContentWidth)|\(normalizedTempoChanges.map(\.id))|\(normalizedTimeSignatureChanges.map(\.id))")

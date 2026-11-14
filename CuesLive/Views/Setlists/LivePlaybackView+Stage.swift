@@ -7,7 +7,11 @@ import AppKit
 extension LivePlaybackView {
     var playbackMainLayout: some View {
         #if os(macOS)
-        playbackSplitLayout
+        HStack(spacing: 0) {
+            playbackSplitLayout
+            Divider()
+            SetlistMixMeterView(model: mixMeter, engine: coordinator.playbackEngine)
+        }
         #else
         playbackMainSection
             .navigationDestination(isPresented: mixerScreenPresented) {
@@ -177,7 +181,7 @@ extension LivePlaybackView {
                 idlePlayheadTime: playbackClock.isPlaying ? nil : playbackClock.currentTime,
                 cuedSectionID: cuedSectionID,
                 cueFlashPhase: cueFlashPhase,
-                onSeek: coordinator.seek,
+                onSeek: handleWaveformClick(at:),
                 onCueSection: cueSection,
                 onOverlapTapped: { playbackIndex in
                     presentOverlapEditor(forPlaybackIndex: playbackIndex)

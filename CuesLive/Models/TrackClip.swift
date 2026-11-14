@@ -27,6 +27,8 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
     var fadeOut: ClipFade {
         didSet { fitFades() }
     }
+    /// A muted clip stays on the timeline, drawn dimmed, and plays nothing.
+    var isMuted: Bool
 
     init(
         id: UUID = UUID(),
@@ -37,7 +39,8 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
         gainDB: Double = 0,
         playbackRate: Double = 1,
         fadeIn: ClipFade = .none,
-        fadeOut: ClipFade = .none
+        fadeOut: ClipFade = .none,
+        isMuted: Bool = false
     ) {
         self.id = id
         self.trackID = trackID
@@ -48,6 +51,7 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
         self.playbackRate = Self.storedRate(playbackRate)
         self.fadeIn = fadeIn.fitted(to: duration)
         self.fadeOut = fadeOut.fitted(to: duration)
+        self.isMuted = isMuted
     }
 
     var timelineEndSeconds: TimeInterval { timelineStartSeconds + duration }
@@ -138,6 +142,7 @@ extension TrackClip {
         case playbackRate
         case fadeIn
         case fadeOut
+        case isMuted
     }
 
     init(from decoder: Decoder) throws {
@@ -151,7 +156,8 @@ extension TrackClip {
             gainDB: try container.decodeIfPresent(Double.self, forKey: .gainDB) ?? 0,
             playbackRate: try container.decodeIfPresent(Double.self, forKey: .playbackRate) ?? 1,
             fadeIn: try container.decodeIfPresent(ClipFade.self, forKey: .fadeIn) ?? .none,
-            fadeOut: try container.decodeIfPresent(ClipFade.self, forKey: .fadeOut) ?? .none
+            fadeOut: try container.decodeIfPresent(ClipFade.self, forKey: .fadeOut) ?? .none,
+            isMuted: try container.decodeIfPresent(Bool.self, forKey: .isMuted) ?? false
         )
     }
 
@@ -166,5 +172,9 @@ extension TrackClip {
         try container.encode(playbackRate, forKey: .playbackRate)
         try container.encode(fadeIn, forKey: .fadeIn)
         try container.encode(fadeOut, forKey: .fadeOut)
+        // Written only when set, so unmuted clips save exactly as before.
+        if isMuted {
+            try container.encode(isMuted, forKey: .isMuted)
+        }
     }
 }

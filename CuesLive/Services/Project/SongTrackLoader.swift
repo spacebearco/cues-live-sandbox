@@ -6,7 +6,8 @@ enum SongTrackLoader {
         url: URL,
         relativePath: String,
         settings: AudioEngineManager.TrackSettings,
-        groupID: UUID?
+        groupID: UUID?,
+        sourceChannel: Int?
     )
 
     static func trackInputs(for song: Song) throws -> [TrackInput] {
@@ -17,7 +18,8 @@ enum SongTrackLoader {
                 url: url,
                 relativePath: track.mediaPath ?? track.relativeFilePath,
                 settings: AudioEngineManager.TrackSettings(track: track),
-                groupID: track.group?.id
+                groupID: track.group?.id,
+                sourceChannel: track.sourceChannel
             )
         }
     }
@@ -51,7 +53,9 @@ enum SongTrackLoader {
         }
 
         return try trackInputs.enumerated().map { _, input in
-            let buffer = try StreamingStemBuffer(url: input.url)
+            let stream = try StreamingStemBuffer(url: input.url)
+            let buffer: any StemSampleSource = input.sourceChannel
+                .map { ChannelSelectedSource(base: stream, channel: $0) } ?? stream
             var settings = input.settings
             if settings.trimEnd == nil {
                 settings.trimEnd = Double(buffer.frameCount) / buffer.sampleRate

@@ -92,6 +92,8 @@ struct EditSongToolbarContent: ToolbarContent {
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
     @Binding var showingClickEditor: Bool
+    @Binding var showingWaveformSize: Bool
+    @Binding var waveformScale: Double
 
     @ToolbarContentBuilder
     var body: some ToolbarContent {
@@ -213,10 +215,31 @@ struct EditSongToolbarContent: ToolbarContent {
         }
     }
 
+    /// The key the song is written in. Choosing one is undoable and saved to the project.
+    private var songKeySelection: Binding<SongMusicalKey?> {
+        Binding(
+            get: { song.baseKeyRaw.flatMap(SongMusicalKey.init(spelling:)) },
+            set: { key in
+                let before = captureSnapshot()
+                viewModel.setBaseKey(key)
+                registerUndo("Set Song Key", before, captureSnapshot())
+            }
+        )
+    }
+
     private var moreMenu: some View {
         Menu {
+            Picker(selection: songKeySelection) {
+                Text("None").tag(SongMusicalKey?.none)
+                ForEach(SongMusicalKey.chromaticOrder, id: \.self) { key in
+                    Text(key.displayName).tag(Optional(key))
+                }
+            } label: {
+                Label("Song Key", systemImage: "music.note")
+            }
+
             Button(action: onChangeKey) {
-                Label("Change Key", systemImage: "key")
+                Label("Transpose", systemImage: "key")
             }
             .disabled(song.sortedTracks.isEmpty)
 
@@ -230,6 +253,12 @@ struct EditSongToolbarContent: ToolbarContent {
                 onAddVideo()
             } label: {
                 Label(song.videoTrack == nil ? "Add Video…" : "Replace Video…", systemImage: "film")
+            }
+
+            Button {
+                showingWaveformSize = true
+            } label: {
+                Label("Waveform Size…", systemImage: "waveform")
             }
 
             Divider()
@@ -247,6 +276,9 @@ struct EditSongToolbarContent: ToolbarContent {
                 .labelStyle(.iconOnly)
         }
         .help("More")
+        .popover(isPresented: $showingWaveformSize, arrowEdge: .bottom) {
+            WaveformSizeControl(scale: $waveformScale)
+        }
     }
 }
 

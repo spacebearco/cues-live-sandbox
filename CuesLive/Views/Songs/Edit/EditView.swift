@@ -68,6 +68,7 @@ struct EditView: View {
     @Bindable var audioEngine = AudioEngineManager.shared
     @State var showingArrangementEditor = false
     @State private var showingClickEditor = false
+    @State private var showingWaveformSize = false
     @State var showingTempoOperations = false
     @State var trackPendingRename: AudioTrack?
     @State var renameTrackName = ""
@@ -77,6 +78,12 @@ struct EditView: View {
     @State var clipDrag: ClipDrag?
     /// The clip under the pointer. Kept out of this view's state so hovering does not rebuild the editor.
     @State var clipHover = TimelineClipHoverModel()
+    /// Where the dragged edge last snapped to a target, drawn as a guide line.
+    @State var snapGuideTime: TimeInterval?
+    /// This song's waveform size (`WaveformSizeStore`), loaded when the editor appears.
+    @State var waveformScale = 1.0
+    /// Clips copied or cut in this editor, for Paste.
+    @State var clipClipboard: ClipClipboard?
     /// The edit selection. A selector drag writes it, and it stays after the pointer
     /// goes up. A click replaces it with an insertion, which has no range.
     @State var editSelection: ClipRangeDrag?
@@ -141,7 +148,12 @@ struct EditView: View {
             .focusedValue(\.trackHeightActions, trackHeightActions)
             .focusedValue(\.timelineZoomActions, timelineZoomActions)
             .onKeyPress(phases: .down, action: handleTrackHeightKeyPress)
+            .onKeyPress(.return, phases: .down, action: handleEditHeadKey)
+            .onKeyPress(keys: [.leftArrow, .rightArrow], phases: .down, action: handleSectionArrowKey)
             #if os(macOS)
+            .onCopyCommand(perform: clipPasteboardItems)
+            .onCutCommand(perform: clipPasteboardItemsCutting)
+            .onPasteCommand(of: [.plainText]) { _ in pasteClipsFromPasteboard() }
             .onDeleteCommand(perform: removeClipSelection)
             .onCommand(#selector(NSResponder.selectAll(_:)), perform: selectAllClips)
             .onExitCommand {
@@ -165,6 +177,9 @@ struct EditView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
                 viewModel.applyOutputRoutingChange()
+            }
+            .onChange(of: song.id) { _, songID in
+                waveformScale = WaveformSizeStore.scale(for: songID)
             }
             .onChange(of: clipSelection) { _, newValue in
                 if !newValue.isEmpty {
@@ -202,6 +217,7 @@ struct EditView: View {
 
     private func handleAppear() {
         isTimelineFocused = true
+        waveformScale = WaveformSizeStore.scale(for: song.id)
         tempoChanges = normalizedTempoChanges
         timeSignatureChanges = normalizedTimeSignatureChanges
         viewModel.syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
@@ -270,7 +286,15 @@ struct EditView: View {
             stoppedDisplayTime: playbackStart,
             captureSnapshot: captureSnapshot,
             registerUndo: registerSnapshotChange(_:before:after:),
-            showingClickEditor: $showingClickEditor
+            showingClickEditor: $showingClickEditor,
+            showingWaveformSize: $showingWaveformSize,
+            waveformScale: Binding(
+                get: { waveformScale },
+                set: { scale in
+                    waveformScale = scale
+                    WaveformSizeStore.setScale(scale, for: song.id)
+                }
+            )
         )
     }
     #endif

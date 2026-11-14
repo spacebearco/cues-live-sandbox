@@ -274,6 +274,7 @@ struct SetlistOverlapEditorView: View {
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 .simultaneousGesture(pinchZoomGesture)
+                .commandScrollZoom(onChanged: pinchZoomChanged, onEnded: pinchZoomEnded)
                 .onAppear {
                     scrollToShowLanes(
                         proxy: proxy,
@@ -353,25 +354,29 @@ struct SetlistOverlapEditorView: View {
 
     private var pinchZoomGesture: some Gesture {
         MagnificationGesture()
-            .onChanged { scale in
-                if pinchStartZoom == nil {
-                    pinchStartZoom = windowZoom
-                }
-                guard let pinchStartZoom else { return }
-                var transaction = Transaction()
-                transaction.disablesAnimations = true
-                withTransaction(transaction) {
-                    windowZoom = Self.clampedWindowZoom(
-                        pinchStartZoom / scale,
-                        maximum: maximumWindowZoom,
-                        minimum: minimumWindowZoom
-                    )
-                }
-            }
-            .onEnded { _ in
-                pinchStartZoom = nil
-                invalidatePreviewConfiguration()
-            }
+            .onChanged(pinchZoomChanged)
+            .onEnded { _ in pinchZoomEnded() }
+    }
+
+    private func pinchZoomChanged(_ scale: CGFloat) {
+        if pinchStartZoom == nil {
+            pinchStartZoom = windowZoom
+        }
+        guard let pinchStartZoom else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            windowZoom = Self.clampedWindowZoom(
+                pinchStartZoom / scale,
+                maximum: maximumWindowZoom,
+                minimum: minimumWindowZoom
+            )
+        }
+    }
+
+    private func pinchZoomEnded() {
+        pinchStartZoom = nil
+        invalidatePreviewConfiguration()
     }
 
     private func setWindowZoom(_ proposed: CGFloat) {

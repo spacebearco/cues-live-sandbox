@@ -12,6 +12,7 @@ enum EditSheet: Identifiable {
     case tempoChange(TempoLanePrompt)
     case timeSignatureChange(TimeSignatureLanePrompt)
     case clipGain(ClipGainPromptRequest)
+    case insertBars(InsertBarsRequest)
 
     var id: String {
         switch self {
@@ -33,6 +34,8 @@ enum EditSheet: Identifiable {
             "timeSignatureChange-\(prompt.id)"
         case .clipGain(let prompt):
             "clipGain-\(prompt.id)"
+        case .insertBars(let request):
+            "insertBars-\(request.id)"
         }
     }
 }

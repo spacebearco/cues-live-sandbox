@@ -32,9 +32,16 @@ struct LivePlaybackView: View {
     @Bindable var playbackClock = AudioEngineManager.shared
     @State var cuedSectionID: UUID?
     @State var cueFireTime: TimeInterval?
+    /// Where a cued bar or beat jump lands. Section cues land on their section's start instead.
+    @State var cueTargetTime: TimeInterval?
+    @AppStorage(SetlistPlayMode.storageKey) var playMode: SetlistPlayMode = SetlistPlayMode.defaultMode
+    @AppStorage(ShowQuantize.storageKey) var showQuantize: ShowQuantize = .section
     @State var cueFlashPhase = false
     @State var sectionLoop = SectionLoopController()
     @State var groupMixFade = GroupMixFadeController()
+    #if os(macOS)
+    @State var mixMeter = MixMeterModel()
+    #endif
     @State var sectionAnnouncer = SectionAnnouncer()
     /// iOS only: the song library sheet. macOS shows the library in the song browser pane.
     @State var showingSongLibrary = false
@@ -348,7 +355,9 @@ struct LivePlaybackView: View {
                     return OutputRoutingStore.snapshot(in: modelContext, channelCount: channelCount)
                 }
                 coordinator.groupMixProvider = {
-                    GroupMixStore.snapshot(in: modelContext)
+                    var snapshot = GroupMixStore.snapshot(in: modelContext)
+                    snapshot.fadeFilter = groupMixFade.fadeFilter(in: modelContext)
+                    return snapshot
                 }
                 coordinator.timecodeSettingsProvider = {
                     TimecodeSettingsStore.snapshot(in: modelContext)
@@ -394,6 +403,11 @@ struct LivePlaybackView: View {
                 }
                 handleSongEditorDismissed(newValue)
             }
+            .onChange(of: playMode) { _, mode in
+                // Show mode locks editing, so an open editor closes.
+                guard mode == .show, isSongEditorOpen else { return }
+                toggleSongEditor()
+            }
             .liveInputMappingSession(arePlaybackActionsEnabled: songToEditID == nil) { action in
                 handleMappedLiveAction(action)
             }
@@ -403,6 +417,7 @@ struct LivePlaybackView: View {
     }
 
     func presentSongEditor(for song: Song) {
+        guard playMode == .edit else { return }
         #if os(macOS)
         // An open editor window takes the song, so the setlist keeps playing here.
         if SetlistEditorLink.shared.isWindowOpen {
@@ -432,6 +447,7 @@ struct LivePlaybackView: View {
 
     /// Opens the editor on the playing song, or closes it when it is already showing.
     func toggleSongEditor() {
+        guard playMode == .edit || isSongEditorOpen else { return }
         #if os(macOS)
         if SetlistEditorLink.shared.isWindowOpen {
             dismissWindow(id: SetlistSongEditorWindowID.value)

@@ -8,7 +8,8 @@ extension EditView {
             duration: timelineDuration,
             contentWidth: timelineContentWidth,
             loadsWaveforms: viewModel.isLoaded,
-            hover: clipHover
+            hover: clipHover,
+            waveformScale: Float(waveformScale)
         )
     }
 

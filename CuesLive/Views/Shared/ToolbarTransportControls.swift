@@ -61,6 +61,7 @@ struct ToolbarTransportControls: View {
             }
         }
         .mappableLiveControl(.fade)
+        .contextMenu { FadeSettingsMenu() }
     }
 
     private var fadeToggleContent: some View {

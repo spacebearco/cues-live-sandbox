@@ -114,7 +114,7 @@ struct EditTransportBar<Chrome: View>: View {
     private var overflowMenu: some View {
         Menu {
             Button(action: onChangeKey) {
-                Label("Change Key", systemImage: "key")
+                Label("Transpose", systemImage: "key")
             }
             .disabled(song.sortedTracks.isEmpty)
 

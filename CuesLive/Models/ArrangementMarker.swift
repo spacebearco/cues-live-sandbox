@@ -12,6 +12,8 @@ struct ArrangementMarker: Codable, Identifiable, Hashable {
     var sortOrder: Int
     /// Live playback loops this marker's section until released.
     var loops: Bool
+    /// A color picked for the section (`ArrangementSectionPalette`), or `nil` for the automatic one.
+    var colorIndex: Int?
 
     init(
         id: UUID = UUID(),
@@ -19,7 +21,8 @@ struct ArrangementMarker: Codable, Identifiable, Hashable {
         startSeconds: Double,
         endSeconds: Double? = nil,
         sortOrder: Int = 0,
-        loops: Bool = false
+        loops: Bool = false,
+        colorIndex: Int? = nil
     ) {
         self.id = id
         self.name = name
@@ -27,6 +30,7 @@ struct ArrangementMarker: Codable, Identifiable, Hashable {
         self.endSeconds = endSeconds
         self.sortOrder = sortOrder
         self.loops = loops
+        self.colorIndex = colorIndex
     }
 
     init(from decoder: Decoder) throws {
@@ -37,6 +41,7 @@ struct ArrangementMarker: Codable, Identifiable, Hashable {
         endSeconds = try container.decodeIfPresent(Double.self, forKey: .endSeconds)
         sortOrder = try container.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
         loops = try container.decodeIfPresent(Bool.self, forKey: .loops) ?? false
+        colorIndex = try container.decodeIfPresent(Int.self, forKey: .colorIndex)
     }
 }
 

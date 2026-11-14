@@ -86,6 +86,7 @@ extension LivePlaybackView {
         }
         cuedSectionID = nil
         cueFireTime = nil
+        cueTargetTime = nil
         cueFlashPhase = false
     }
 
@@ -130,6 +131,11 @@ extension LivePlaybackView {
     func fireMarkerCue() {
         guard let cueFireTime, let cuedSectionID else { return }
         guard coordinator.currentTime >= cueFireTime || !coordinator.hasPendingSectionTransition else { return }
+        if let cueTargetTime {
+            coordinator.snapToScheduledSection(cueTargetTime)
+            clearMarkerCue(cancellingScheduledTransition: false)
+            return
+        }
         guard let section = coordinator.currentWaveformSnapshot?.sections.first(where: { $0.id == cuedSectionID }) else {
             clearMarkerCue(cancellingScheduledTransition: false)
             return

@@ -55,6 +55,8 @@ extension EditView {
                 onCancel: { activeSheet = nil },
                 onApply: applyClipGain
             )
+        case .insertBars(let request):
+            insertBarsPrompt(for: request)
         }
     }
 

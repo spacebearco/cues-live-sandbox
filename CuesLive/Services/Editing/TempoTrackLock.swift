@@ -102,7 +102,8 @@ enum TempoTrackLock {
                     duration: newEnd - newStart,
                     sourceStartSeconds: clip.sourceTime(atTimeline: lower),
                     gainDB: clip.gainDB,
-                    playbackRate: rate
+                    playbackRate: rate,
+                    isMuted: clip.isMuted
                 )
             )
         }

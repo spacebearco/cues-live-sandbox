@@ -177,6 +177,11 @@ struct WaveformLaneView: View {
         clipChrome(clip: clip, clipWidth: max(0, endX - startX))
             .gesture(clipPointerGesture(for: clip, clipWidth: max(0, endX - startX), contentX: startX))
             .contextMenu {
+                Button("Cut") { actions.menu(.cut, clip.id) }
+                Button("Copy") { actions.menu(.copy, clip.id) }
+                Button("Paste at Insertion Point") { actions.menu(.paste, clip.id) }
+                Button(clip.isMuted ? "Unmute" : "Mute") { actions.menu(.mute, clip.id) }
+                Divider()
                 Button("Split") { actions.menu(.split, clip.id) }
                 Button("Join") { actions.menu(.join, clip.id) }
                 Button("Duplicate") { actions.menu(.duplicate, clip.id) }
@@ -243,6 +248,14 @@ struct WaveformLaneView: View {
             }
         }
         .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
+        .overlay {
+            if clip.isMuted {
+                // Muted clips stay put but read as switched off.
+                Rectangle()
+                    .fill(AppColors.backgroundPrimary.opacity(0.6))
+                    .allowsHitTesting(false)
+            }
+        }
         .overlay(alignment: .topLeading) {
             clipGainChrome(clip: clip, clipWidth: clipWidth, clipHeight: clipHeight)
         }
@@ -314,8 +327,9 @@ struct WaveformLaneView: View {
         isSelected: Bool,
         clipWidth: CGFloat
     ) -> some View {
-        // Dark text on the light selected header, like Logic; muted white on the plain header.
-        let foregroundColor = isSelected
+        // Dark text on the light selected header, like Logic. On the plain header, muted
+        // white unless the group color is light (white, gray), where it would wash out.
+        let foregroundColor = isSelected || headerColor.prefersDarkText
             ? AppColors.Timeline.clipHeaderTextSelected
             : AppColors.Timeline.clipHeaderText
 

@@ -236,7 +236,7 @@ extension EditView {
         }
     }
 
-    private func duplicateSection(_ sectionID: UUID) {
+    func duplicateSection(_ sectionID: UUID) {
         clipSelection.deselectAll()
         performUndoableChange("Duplicate Section") {
             ClipEditing.duplicateSection(sectionID, timeline: &timeline, midiEvents: &midiEvents)
@@ -267,7 +267,9 @@ extension EditView {
             remove: { sectionID in
                 guard let section = displaySections.first(where: { $0.id == sectionID }) else { return }
                 deleteSection(section)
-            }
+            },
+            rename: renameSection(id:to:),
+            setColor: setSectionColor(id:to:)
         )
     }
 }

@@ -21,6 +21,8 @@ struct TimelineSectionMarkerRowView: View {
     let onAddSection: (TimeInterval) -> Void
     let onRenameSection: (SongSection) -> Void
     let onRemoveMarker: (SongSection) -> Void
+    var onDuplicateSection: (SongSection) -> Void = { _ in }
+    var onInsertBars: (TimeInterval) -> Void = { _ in }
     /// Sections as they would be after an edge edit, drawn while the edge is dragged.
     let previewSections: (SectionEdgeEdit) -> [SongSection]
     let onEditSectionEdge: (SectionEdgeEdit) -> Void
@@ -87,13 +89,19 @@ struct TimelineSectionMarkerRowView: View {
                     .fixedSize(horizontal: true, vertical: false)
             }
         }
-        .foregroundStyle(isSelected ? AppColors.backgroundSecondary : AppColors.textPrimary)
+        .foregroundStyle(isSelected ? AppColors.backgroundSecondary : sectionColor(section).readableTextColor)
         .padding(.horizontal, AppSpacing.tagInsets.leading)
+    }
+
+    /// The section's color, as the setlist shows it.
+    private func sectionColor(_ section: SongSection) -> Color {
+        let index = sections.firstIndex { $0.id == section.id } ?? 0
+        return ArrangementSectionPalette.colors(for: index, picked: section.colorIndex).accent
     }
 
     /// A cued block pulses between its fill and a dimmer version of it.
     private func fillColor(for section: SongSection, isSelected: Bool) -> Color {
-        let fill = isSelected ? AppColors.sectionMarkerSelected : AppColors.sectionMarker
+        let fill = isSelected ? AppColors.sectionMarkerSelected : sectionColor(section)
         guard cuedSectionID == section.id else { return fill }
         return cueFlashPhase ? fill : fill.opacity(0.45)
     }
@@ -154,9 +162,15 @@ struct TimelineSectionMarkerRowView: View {
                 Button("Add Section Marker") {
                     onAddSection(timelineTime(at: pointerX))
                 }
+                Button("Insert Bars Here…") {
+                    onInsertBars(timelineTime(at: pointerX))
+                }
                 if let section = shown.section(atTimeline: timelineTime(at: pointerX)) {
                     Button("Rename") {
                         onRenameSection(section)
+                    }
+                    Button("Duplicate Section") {
+                        onDuplicateSection(section)
                     }
                     Button(loopSectionIDs.contains(section.id) ? "Remove Loop" : "Loop Section") {
                         onToggleLoopSection(section)

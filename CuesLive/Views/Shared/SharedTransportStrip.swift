@@ -19,6 +19,9 @@ struct SharedTransportControlButtons: View {
     var showsBackground: Bool = true
     var iconScale: CGFloat = 0.38
 
+    @AppStorage(FadeButtonSettings.durationKey) private var fadeSeconds = FadeButtonSettings.defaultDuration
+    @AppStorage(FadeButtonSettings.filterSweepKey) private var fadeSweepsFilter = true
+
     var body: some View {
         HStack(spacing: 0) {
             AppIconButton(
@@ -109,6 +112,8 @@ struct SharedTransportControlButtons: View {
         }
         .opacity(opacity)
         .animation(AppAnimation.fadeQuick, value: isFadedOut)
+        .help("Fade over \(FadeButtonSettings.label(forSeconds: fadeSeconds))\(fadeSweepsFilter ? " with filter sweep" : ""). Right-click to change.")
+        .contextMenu { FadeSettingsMenu() }
     }
 }
 

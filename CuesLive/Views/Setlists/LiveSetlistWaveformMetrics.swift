@@ -13,6 +13,8 @@ enum LiveSetlistWaveformMetrics {
     static let minimumWaveformHeight: CGFloat = 56
     static let maximumWaveformHeight: CGFloat = 200
     static let laneVerticalPadding: CGFloat = 0
+    /// Height of the song name header above each lane.
+    static let laneHeaderHeight: CGFloat = 20
 
     static let horizontalZoomAppStorageKey = "liveSetlistWaveformHorizontalZoom"
     static let defaultHorizontalZoom: CGFloat = 1

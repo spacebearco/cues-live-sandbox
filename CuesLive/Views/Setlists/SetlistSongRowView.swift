@@ -8,6 +8,8 @@ struct SetlistSongRowView<MenuContent: View>: View {
     let isFinished: Bool
     let isPlaying: Bool
     let showsMenu: Bool
+    /// Whether the section list under the row is open. Nil when the song has no sections to show.
+    var sectionsExpanded: Binding<Bool>? = nil
     @ViewBuilder let menu: () -> MenuContent
 
     private var detailText: String? {
@@ -19,6 +21,8 @@ struct SetlistSongRowView<MenuContent: View>: View {
         HStack(spacing: AppSpacing.sm) {
             leadingIndicator
                 .frame(width: 28)
+
+            sectionsDisclosure
 
             VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
                 Text(song.title)
@@ -48,6 +52,28 @@ struct SetlistSongRowView<MenuContent: View>: View {
         }
         .frame(minHeight: AppSpacing.rowMinHeight)
         .opacity(isFinished ? 0.55 : 1)
+    }
+
+    /// Folds the song's sections open or closed. Keeps its width when a song has no sections,
+    /// so titles stay aligned.
+    private var sectionsDisclosure: some View {
+        Button {
+            withAnimation(AppAnimation.springSnappy) {
+                sectionsExpanded?.wrappedValue.toggle()
+            }
+        } label: {
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColors.textSecondary)
+                .rotationEffect(.degrees(sectionsExpanded?.wrappedValue == true ? 90 : 0))
+                .frame(width: 20, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .opacity(sectionsExpanded == nil ? 0 : 1)
+        .disabled(sectionsExpanded == nil)
+        .accessibilityLabel(sectionsExpanded?.wrappedValue == true ? "Hide sections" : "Show sections")
+        .help(sectionsExpanded?.wrappedValue == true ? "Hide sections" : "Show sections")
     }
 
     @ViewBuilder

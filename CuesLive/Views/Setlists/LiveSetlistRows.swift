@@ -110,6 +110,9 @@ struct SetlistListView: View {
     /// Inset of row content from the list's edges. Rows are padded rather than the list,
     /// so the scroller stays at the edge.
     var rowHorizontalPadding: CGFloat = 0
+    /// While playing, switching to another song takes a double-click, so a stray click
+    /// can't pull the band out of the song.
+    var switchesSongsOnDoubleClickWhilePlaying = false
 
     /// Library song drags, plus Finder folders on macOS, which are imported as new songs.
     static var dropTypes: [UTType] {
@@ -205,13 +208,15 @@ struct SetlistListView: View {
                 isFinished: song.playbackIndex < currentIndex,
                 isPlaying: isPlaying,
                 showsMenu: !isEditing,
-                menu: { SetlistRowMenuContent(model: row, actions: rowActions, sectionsExpanded: expansion) }
+                sectionsExpanded: expansion,
+                menu: { SetlistRowMenuContent(model: row, actions: rowActions) }
             )
             .contentShape(Rectangle())
-            .onTapGesture {
+            .onTapGesture(count: songSwitchClickCount(isCurrent: isCurrent)) {
                 guard !isEditing else { return }
                 rowActions.play?()
             }
+            .help(songSwitchClickCount(isCurrent: isCurrent) == 2 ? "Double-click to switch songs while playing" : "")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(named: "Play") { rowActions.play?() }
             .appLinkPointer()
@@ -223,6 +228,7 @@ struct SetlistListView: View {
                     playbackIndex: song.playbackIndex,
                     isCurrent: isCurrent,
                     isEnabled: !isEditing,
+                    selectClickCount: songSwitchClickCount(isCurrent: isCurrent),
                     playback: sectionPlayback
                 )
                 .padding(.bottom, AppSpacing.xs)
@@ -232,7 +238,12 @@ struct SetlistListView: View {
         .padding(.horizontal, rowHorizontalPadding)
         .listRowBackground(Color.clear)
         .setlistSwipeActions(actions: rowActions)
-        .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions, sectionsExpanded: expansion) }
+        .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions) }
+    }
+
+    /// Clicks needed to leave the current song: two while it plays, when asked for.
+    private func songSwitchClickCount(isCurrent: Bool) -> Int {
+        switchesSongsOnDoubleClickWhilePlaying && isPlaying && !isCurrent ? 2 : 1
     }
 
     /// Nil when the row can't expand. Otherwise a manual override wins, and the current song
@@ -284,27 +295,11 @@ private extension View {
 private struct SetlistRowMenuContent: View {
     let model: SetlistRowModel
     let actions: SetlistRowActions
-    /// Nil when the song has no sections to show.
-    var sectionsExpanded: Binding<Bool>? = nil
 
     var body: some View {
         if let play = actions.play {
             Button(action: play) {
                 Label("Play", systemImage: "play.fill")
-            }
-        }
-
-        if let sectionsExpanded {
-            let isExpanded = sectionsExpanded.wrappedValue
-            Button {
-                withAnimation(AppAnimation.springSnappy) {
-                    sectionsExpanded.wrappedValue.toggle()
-                }
-            } label: {
-                Label(
-                    isExpanded ? "Hide Sections" : "Show Sections",
-                    systemImage: isExpanded ? "list.bullet.indent" : "list.bullet"
-                )
             }
         }
 

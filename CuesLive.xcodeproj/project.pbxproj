@@ -860,6 +860,8 @@
 		11B60577FB2F23F05BD5EB89 /* FadeFilterEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FFEAAB7751EAD484B3F952 /* FadeFilterEngineTests.swift */; };
 		38688C4492384E1862D1C872 /* StereoMeterLevels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC06A4699FE1A1BFD34276DB /* StereoMeterLevels.swift */; };
 		DC551B22FE8A1E88AB726945 /* StereoMeterLevels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC06A4699FE1A1BFD34276DB /* StereoMeterLevels.swift */; };
+		5061860D7D151C034F04817E /* LiveSetlistLaneHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6018917136FCDE54796A36 /* LiveSetlistLaneHeader.swift */; };
+		F3CBDD89540A13D6F9946812 /* LiveSetlistLaneHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB6018917136FCDE54796A36 /* LiveSetlistLaneHeader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1348,6 +1350,7 @@
 		5E883F22FA5FD6FF73C09DC0 /* PlaybackCoordinator+FadeLength.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlaybackCoordinator+FadeLength.swift"; sourceTree = "<group>"; };
 		B4FFEAAB7751EAD484B3F952 /* FadeFilterEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FadeFilterEngineTests.swift; sourceTree = "<group>"; };
 		CC06A4699FE1A1BFD34276DB /* StereoMeterLevels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StereoMeterLevels.swift; sourceTree = "<group>"; };
+		AB6018917136FCDE54796A36 /* LiveSetlistLaneHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistLaneHeader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1574,6 +1577,7 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				AB6018917136FCDE54796A36 /* LiveSetlistLaneHeader.swift */,
 				8530BA40C7A880101992294A /* SetlistModeControls.swift */,
 				D6B4DC5069F381861049D502 /* SetlistMixMeterView.swift */,
 				D5AF94BDF736D0BE51D8E2E6 /* LivePlaybackView+PlayMode.swift */,
@@ -2264,6 +2268,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5061860D7D151C034F04817E /* LiveSetlistLaneHeader.swift in Sources */,
 				38688C4492384E1862D1C872 /* StereoMeterLevels.swift in Sources */,
 				88ACF21DF1EB8680A89AF05D /* PlaybackCoordinator+FadeLength.swift in Sources */,
 				09DC76E15B8C29AD9CF46339 /* TrackLevelMeter.swift in Sources */,
@@ -2738,6 +2743,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F3CBDD89540A13D6F9946812 /* LiveSetlistLaneHeader.swift in Sources */,
 				DC551B22FE8A1E88AB726945 /* StereoMeterLevels.swift in Sources */,
 				45C65BD1D3671D6CEA06D442 /* PlaybackCoordinator+FadeLength.swift in Sources */,
 				FBF14E162EFF615EBACEDA29 /* TrackLevelMeter.swift in Sources */,

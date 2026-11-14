@@ -2,20 +2,12 @@
 
 Josh's open notes (2026-11-13), grouped into batches. Work one batch per session: make all the
 changes, then build Mac and iOS and run the full tests once, deliver one numbered build, and log
-it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 17 (batch 1,
-done).
+it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 18 (batches 1
+and 2 done).
 
-## Batch 2 – Setlist layout
+## Left over from batch 2
 
-Note for Blake: this reworks layout from his "Move to browser file UI" commit.
-
-- Put the song library next to the setlist. Folder list, song list and setlist sit side by side
-  and fold out like nesting dolls; no left + right split.
-- Sections fold open under their song in the setlist, not in a right-click menu.
-- Fix the spacing of the title at the top (ask Josh for a screenshot).
-- Track headers above the waveform in the setlist view.
-- If opening the editor hides the song library, it should hide the setlist too.
-- Switching songs in the setlist needs a double-click, at least while the transport is rolling.
+- Fix the spacing of the title at the top. Needs a screenshot from Josh.
 
 ## Batch 3 – Features and glitches
 

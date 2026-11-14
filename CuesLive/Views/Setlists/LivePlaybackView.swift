@@ -48,6 +48,9 @@ struct LivePlaybackView: View {
     #if os(macOS)
     @AppStorage("liveSongBrowserVisible") var isSongBrowserVisible = true
     @State var songBrowserFolder: LiveSongFolderList.Item? = .allSongs
+    @AppStorage(LiveSongBrowser<EmptyView>.foldersVisibleStorageKey) var showsSongBrowserFolders = true
+    /// Folds the setlists sidebar away while the inline song editor covers the setlist.
+    @State private var splitColumnVisibility: NavigationSplitViewVisibility = .automatic
     #endif
     @AppStorage("liveWaveformVisible") var isWaveformVisible = true
     @State private var songToEditID: UUID?
@@ -92,7 +95,7 @@ struct LivePlaybackView: View {
 
     var body: some View {
         #if os(macOS)
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $splitColumnVisibility) {
             librarySidebar
         } detail: {
             NavigationStack {
@@ -191,7 +194,7 @@ struct LivePlaybackView: View {
             LivePlaybackSidebarLayout(
                 edge: .leading,
                 isVisible: isSongBrowserShowing,
-                minimumWidth: LiveSongBrowser<EmptyView>.minimumWidth,
+                minimumWidth: songBrowserMinimumWidth,
                 widthStorageKey: LivePlaybackSidebarMetrics.songBrowserAppStorageKey
             ) {
                 songBrowser
@@ -390,6 +393,10 @@ struct LivePlaybackView: View {
             }
             .onChange(of: songToEditID) { oldValue, newValue in
                 SetlistEditorLink.shared.setInlineEditorOpen(newValue != nil)
+                #if os(macOS)
+                // The pushed editor already covers the song browser; hide the setlists with it.
+                withAnimation { splitColumnVisibility = newValue != nil ? .detailOnly : .automatic }
+                #endif
                 if newValue != nil {
                     clearMarkerCue()
                     sectionLoop.reset()

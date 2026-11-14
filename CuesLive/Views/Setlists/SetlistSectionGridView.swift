@@ -9,6 +9,8 @@ struct SetlistSectionGridView: View {
     let playbackIndex: Int
     let isCurrent: Bool
     let isEnabled: Bool
+    /// Clicks needed to act on a section; two when it would switch songs mid-playback.
+    var selectClickCount = 1
     let playback: SetlistSectionPlayback
 
     private let columns = [
@@ -36,7 +38,7 @@ struct SetlistSectionGridView: View {
                     cueFlashPhase: playback.cueFlashPhase
                 )
                 .contentShape(RoundedRectangle(cornerRadius: SetlistSectionCard.cornerRadius, style: .continuous))
-                .onTapGesture {
+                .onTapGesture(count: selectClickCount) {
                     guard isEnabled else { return }
                     playback.selectSection(playbackIndex, section)
                 }
@@ -49,7 +51,7 @@ struct SetlistSectionGridView: View {
                 )
             }
         }
-        .padding(.leading, 28 + AppSpacing.sm)
+        .padding(.leading, 28 + 20 + AppSpacing.sm * 2)
     }
 }
 

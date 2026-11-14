@@ -41,7 +41,8 @@ extension LivePlaybackView {
                     onAddHeader: addHeader,
                     onDropItems: { performSetlistDrop(at: $0, providers: $1) },
                     sectionPlayback: setlistSectionPlayback,
-                    rowHorizontalPadding: AppSpacing.xl
+                    rowHorizontalPadding: AppSpacing.xl,
+                    switchesSongsOnDoubleClickWhilePlaying: true
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, AppSpacing.sm)

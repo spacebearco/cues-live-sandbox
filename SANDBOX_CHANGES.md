@@ -14,6 +14,50 @@ Newest first.
 
 ---
 
+## Build 18 – Batch 2 setlist layout
+
+From Josh's notes of 2026-11-13 (`SANDBOX_TODO.md`, batch 2). One build for the whole batch.
+This reworks layout from Blake's "Move to browser file UI" commit; the pieces are his, moved.
+
+- **Song library sits next to the setlist.** The window now reads left to right: setlists
+  sidebar, song folders, songs, then the setlist. Before, the song browser was a trailing pane
+  on the far right, so the library and the setlists were split across the window.
+  `LiveSongBrowserSplitLayout` (new) is a leading resizable pane with a saved width
+  (`liveSongBrowserWidth`). The trailing pane (`LivePlaybackTrailingSidebarLayout`) now only
+  holds the mapping inspector. While mapping, the browser still hides, as before.
+- **Folder column folds away.** A Folders button under the song list hides or shows the folder
+  column (`LiveSongBrowser`, saved as `liveSongBrowserFoldersVisible`), so the panes fold out
+  one inside the next: setlists, folders, songs.
+- **Sections fold open under their song.** Each setlist song row has a chevron that opens its
+  section list. "Show Sections / Hide Sections" is gone from the row menu. The current song
+  still opens by default (`SetlistSongRowView`, `LiveSetlistRows.swift`).
+- **Double-click to switch songs while playing.** While the transport runs, another song's row,
+  a section under another song, and another song's waveform all need a double-click. Stopped,
+  one click still works. The current song's sections stay single-click. The remote view is
+  unchanged (`switchesSongsOnDoubleClickWhilePlaying`, default off).
+- **Song headers above the waveform.** Each lane in the setlist waveform strip has a header
+  line with the song's number and name (`LiveSetlistLaneHeader`, 20 pt, added to the strip
+  height). Assumed "track headers" meant the song names; say if it meant something else.
+- **Inline editor hides the setlists too.** When a song's editor is pushed over the setlist
+  (Edit from a row menu while the editor window is closed), the setlists sidebar folds away
+  with the song browser and comes back when the editor closes.
+
+Not done: **title spacing at the top.** Needs a screenshot from Josh showing what is off.
+
+Files: `LivePlaybackView.swift`, `LivePlaybackView+Sidebar.swift`, `LiveSongBrowser.swift`,
+`LiveSongBrowserSplitLayout.swift` (new), `LiveSetlistLaneHeader.swift` (new),
+`LiveSetlistWaveformScrollView.swift`, `LiveSetlistWaveformMetrics.swift`,
+`LiveSetlistRows.swift`, `SetlistSongRowView.swift`, `SetlistSectionListView.swift`,
+`LivePlaybackView+Setlist.swift`.
+
+Tests: view-only changes, no new tests. Full suite passes; Mac and iOS build clean.
+
+Notes for Blake: the lane header scrolls with its lane, so on a long song it leaves the view;
+a pinned header would be nicer. Folding the folder column keeps the pane's width, so the song
+list gets wider rather than the pane narrower.
+
+---
+
 ## Build 17 – Batch 1 quick fixes
 
 From Josh's notes of 2026-11-13 (`SANDBOX_TODO.md`, batch 1). One build for the whole batch.

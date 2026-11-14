@@ -49,6 +49,10 @@ extension LivePlaybackView {
         }
     }
 
+    var songBrowserMinimumWidth: CGFloat {
+        LiveSongBrowser<EmptyView>.minimumWidth(showsFolders: showsSongBrowserFolders)
+    }
+
     private var songBrowserScope: SongLibraryScope {
         guard case .folder(let id) = songBrowserFolder,
               let folder = songFolders.first(where: { $0.id == id }) else {

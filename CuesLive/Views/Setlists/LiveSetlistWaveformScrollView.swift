@@ -78,8 +78,12 @@ struct LiveSetlistWaveformScrollView: View {
         LiveSetlistWaveformMetrics.midiLanesHeight(forRowCount: maxMIDILaneCount)
     }
 
+    private var headerHeight: CGFloat {
+        LiveSetlistWaveformMetrics.laneHeaderHeight
+    }
+
     private var laneHeight: CGFloat {
-        LiveSetlistWaveformMetrics.laneHeight(for: waveformHeight) + midiLanesExtraHeight
+        LiveSetlistWaveformMetrics.laneHeight(for: waveformHeight) + midiLanesExtraHeight + headerHeight
     }
 
     var body: some View {
@@ -174,6 +178,7 @@ struct LiveSetlistWaveformScrollView: View {
             } else {
                 LiveSetlistWaveformLanePlaceholder(isCurrent: isCurrent)
                     .frame(minHeight: waveformHeight + midiLanesExtraHeight, alignment: .top)
+                    .padding(.top, headerHeight)
                     .task(id: songID) {
                         ensureWaveformSnapshotForSongID(songID)
                     }
@@ -181,6 +186,7 @@ struct LiveSetlistWaveformScrollView: View {
         }
         .modifier(NonCurrentSongSelectTapModifier(
             isEnabled: !isCurrent && onSelectSong != nil && !mapping.showsLiveHighlights,
+            clickCount: isPlayingProvider() ? 2 : 1,
             contentWidth: laneSnapshot.map { laneContentWidth(for: $0) } ?? 0,
             window: laneSnapshot?.window,
             sections: laneSnapshot?.sections ?? [],
@@ -196,7 +202,14 @@ struct LiveSetlistWaveformScrollView: View {
     ) -> some View {
         let laneContentWidth = laneContentWidth(for: snapshot)
 
-        VStack(alignment: .leading, spacing: LiveSetlistWaveformMetrics.midiLaneRowSpacing) {
+        VStack(alignment: .leading, spacing: 0) {
+            LiveSetlistLaneHeader(
+                number: playbackIndex + 1,
+                title: snapshot.songName,
+                isCurrent: isCurrent,
+                width: laneContentWidth
+            )
+
             LiveSongWaveformView(
                 contentWidth: laneContentWidth,
                 window: snapshot.window,
@@ -225,11 +238,12 @@ struct LiveSetlistWaveformScrollView: View {
                     deviceName: lane.deviceName,
                     events: lane.events
                 )
+                .padding(.top, LiveSetlistWaveformMetrics.midiLaneRowSpacing)
             }
         }
         // Songs with fewer MIDI lanes still occupy the tallest lane's height,
         // so every waveform stays on the same vertical line.
-        .frame(minHeight: waveformHeight + midiLanesExtraHeight, alignment: .top)
+        .frame(minHeight: waveformHeight + midiLanesExtraHeight + headerHeight, alignment: .top)
         .opacity(isCurrent ? 1 : LiveSetlistWaveformMetrics.nonCurrentLaneOpacity)
     }
 }
@@ -254,6 +268,8 @@ private struct LiveSetlistWaveformLanePlaceholder: View {
 /// reports that section's start so playback lands there.
 private struct NonCurrentSongSelectTapModifier: ViewModifier {
     let isEnabled: Bool
+    /// Two while the setlist plays, so a stray click can't leave the playing song.
+    let clickCount: Int
     let contentWidth: CGFloat
     /// Nil until the song's lane has a snapshot.
     let window: LiveLaneWindow?
@@ -266,7 +282,7 @@ private struct NonCurrentSongSelectTapModifier: ViewModifier {
         content
             .contentShape(Rectangle())
             .simultaneousGesture(
-                SpatialTapGesture()
+                SpatialTapGesture(count: clickCount)
                     .onEnded { event in
                         onSelect(sectionStart(atX: event.location.x))
                     },

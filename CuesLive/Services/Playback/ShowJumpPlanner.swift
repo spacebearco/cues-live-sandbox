@@ -92,6 +92,31 @@ enum ShowJumpPlanner {
         return barStart(containing: time, offsetBy: 0, tempoChanges, timeSignatureChanges)
     }
 
+    /// Where Panic lands: one bar before the start of the section playing at `now`, so the band
+    /// gets a bar of pre-roll and comes back in on the section's downbeat. Outside every
+    /// section, the bar before the one playing. Without a tempo there are no bars, so it lands
+    /// on the section start (or stays put).
+    static func panicTarget(
+        now: TimeInterval,
+        sections: [SongSection],
+        tempoChanges: [TempoChange],
+        timeSignatureChanges: [TimeSignatureChange]
+    ) -> TimeInterval {
+        let anchor = sections.section(atTimeline: now)?.timelineStartSeconds ?? now
+        guard !tempoChanges.isEmpty else { return max(0, anchor) }
+        // A hair inside the bar, so a section starting exactly on a bar line counts as that bar.
+        let measure = MeasureTiming.measureIndex(
+            at: max(0, anchor) + 0.005,
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges
+        )
+        return max(0, MeasureTiming.timeAtStartOfMeasure(
+            max(0, measure - 1),
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges
+        ))
+    }
+
     /// Start of the bar `time` is in, or of the bar `offset` bars later.
     private static func barStart(
         containing time: TimeInterval,

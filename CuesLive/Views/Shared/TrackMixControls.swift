@@ -213,6 +213,8 @@ struct MixerFaderColumn: View {
     @State private var lastPressTime: TimeInterval = 0
     /// This press reset the fader to unity; moving the pointer before release does nothing.
     @State private var isResetPress = false
+    /// How far from the thumb's centre the press landed, so grabbing the thumb doesn't jump it.
+    @State private var grabOffset: CGFloat = 0
 
     private let trackWidth: CGFloat = 4
     private let thumbWidth: CGFloat = 52
@@ -271,10 +273,16 @@ struct MixerFaderColumn: View {
                         if !isDragging {
                             dragValue = value
                             isDragging = true
+                            let distance = drag.startLocation.y - thumbCenterY
+                            grabOffset = abs(distance) <= thumbHeight / 2 ? distance : 0
                             beginPress()
                         }
                         guard !isResetPress else { return }
-                        setLiveValue(fromCenterY: drag.location.y, trackHeight: trackHeight, travel: travel)
+                        setLiveValue(
+                            fromCenterY: drag.location.y - grabOffset,
+                            trackHeight: trackHeight,
+                            travel: travel
+                        )
                     }
                     .onEnded { _ in
                         if isDragging {
@@ -415,6 +423,7 @@ struct MixerFaderColumn: View {
         let clampedCenter = min(max(y, thumbHeight / 2), trackHeight - thumbHeight / 2)
         let normalized = Double((clampedCenter - thumbHeight / 2) / travel)
         let newValue = MixerFaderScale.linearGain(forNormalizedPosition: normalized)
+        guard newValue != dragValue else { return }
         dragValue = newValue
         onLiveVolumeChange(newValue)
     }
@@ -455,6 +464,8 @@ private struct GroupPeakMeterBar: View {
             RoundedRectangle(cornerRadius: MixerFaderScale.meterCornerRadius, style: .continuous)
                 .fill(AppColors.Mixer.faderLevel)
                 .frame(height: fill)
+                // Glides between the 30 Hz readings instead of stepping.
+                .animation(.linear(duration: 0.05), value: fill)
         }
     }
 }

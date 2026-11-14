@@ -2,24 +2,17 @@
 
 Josh's open notes (2026-11-13), grouped into batches. Work one batch per session: make all the
 changes, then build Mac and iOS and run the full tests once, deliver one numbered build, and log
-it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 19 (batches 1
-and 2 done).
+it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 20 (batches 1
+to 3 done).
 
-## Batch 3 – Features and glitches
+## Open
 
-- **Panic button:** one click gets the band back into the section. It gives a one-bar pre-roll:
-  playback jumps to one bar before the start of the section, so everyone comes in on the
-  downbeat. (Assumed: the section playing when it is pressed. Confirm with Josh.)
-- **"Me time" button (Edit mode):** routes all audio to a secondary, dedicated output, on the same
-  audio device or a different one. Same device is a routing change; a different device needs a
-  second output and may be one for Blake.
-- **Filter sweep is MIDI-mappable:** the Fade button's low-pass sweep as a mappable control.
-- **Setlist faders are per song:** they follow the levels set in the editor for each song, so each
-  song carries its own mix. (Today group faders are global.)
-- Setlist faders are visually glitchy while dragging.
-- Meters in the setlist view stutter.
 - Waveform "sticks" when scrolling in the editor. Josh said to revisit later; get a screen
   recording first.
+- Build 19 lag (waveform strip and whole window while scrolling): build 20 has a guessed fix.
+  If it is still there, get a `sample` of the app while scrolling.
+- Me Time on a second audio device (one for Blake).
+- Setlist faders tied to the editor's track gains, rather than a separate per-song mix.
 
 ## Dropped
 

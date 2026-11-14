@@ -95,6 +95,34 @@ final class OutputRoutingManagerTests: XCTestCase {
         XCTAssertFalse(snapshot.hasNonDefaultRouting)
     }
 
+    func testMeTimeSendsEverythingHeardToOneOutput() {
+        let routed = UUID()
+        let silent = UUID()
+        let unrouted = UUID()
+        let meTime = OutputDestination.stereoPair(startChannel: 3)
+        let snapshot = OutputRoutingSnapshot(
+            deviceUID: nil,
+            routesByGroupID: [routed: .mono(channel: 1), silent: .none],
+            ungroupedDestination: .defaultDestination,
+            channelCount: 4
+        ).routingEverything(to: meTime)
+
+        XCTAssertEqual(OutputRoutingStore.destination(for: routed, snapshot: snapshot), meTime)
+        XCTAssertEqual(OutputRoutingStore.destination(for: unrouted, snapshot: snapshot), meTime)
+        XCTAssertEqual(OutputRoutingStore.destination(for: nil, snapshot: snapshot), meTime)
+        XCTAssertEqual(OutputRoutingStore.destination(for: silent, snapshot: snapshot), OutputDestination.none)
+        XCTAssertTrue(snapshot.hasNonDefaultRouting)
+    }
+
+    func testMeTimeOutputFallsBackToTheLastPairOnASmallDevice() {
+        let suite = "MeTimeSettingsTests"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        XCTAssertEqual(MeTimeSettings.destination(channelCount: 8, defaults: defaults), .stereoPair(startChannel: 3))
+        XCTAssertEqual(MeTimeSettings.destination(channelCount: 2, defaults: defaults), .stereoPair(startChannel: 1))
+        defaults.removePersistentDomain(forName: suite)
+    }
+
     @MainActor
     func testStereoTestSpeaksOnBothChannelsAndStopDoesNotCrash() async {
         let peaks = await OutputChannelTestPlayer.shared.measureChannelPeaks(

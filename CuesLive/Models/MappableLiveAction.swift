@@ -6,6 +6,10 @@ enum MappableLiveAction: Codable, Hashable, Identifiable, Sendable {
     case playPause
     case fade
     case loop
+    /// Back to one bar before the start of the section playing.
+    case panic
+    /// Closes or reopens the low-pass filter without fading the level.
+    case filterSweep
     case goToSong(Int)
     case goToSection(songIndex: Int, sectionIndex: Int)
 
@@ -14,6 +18,8 @@ enum MappableLiveAction: Codable, Hashable, Identifiable, Sendable {
         .playPause,
         .fade,
         .loop,
+        .panic,
+        .filterSweep,
     ]
 
     var id: String {
@@ -22,6 +28,8 @@ enum MappableLiveAction: Codable, Hashable, Identifiable, Sendable {
         case .playPause: "playPause"
         case .fade: "fade"
         case .loop: "loop"
+        case .panic: "panic"
+        case .filterSweep: "filterSweep"
         case .goToSong(let index): "goToSong.\(index)"
         case .goToSection(let songIndex, let sectionIndex): "goToSection.\(songIndex).\(sectionIndex)"
         }
@@ -33,6 +41,8 @@ enum MappableLiveAction: Codable, Hashable, Identifiable, Sendable {
         case .playPause: "Play"
         case .fade: "Fade"
         case .loop: "Loop"
+        case .panic: "Panic"
+        case .filterSweep: "Filter Sweep"
         case .goToSong(let index): "Song \(index + 1)"
         case .goToSection(let songIndex, let sectionIndex):
             "Song \(songIndex + 1) · Section \(sectionIndex + 1)"
@@ -45,6 +55,8 @@ enum MappableLiveAction: Codable, Hashable, Identifiable, Sendable {
         case .playPause: "play.fill"
         case .fade: "righttriangle.fill"
         case .loop: "repeat"
+        case .panic: "arrow.uturn.backward.circle.fill"
+        case .filterSweep: "dial.low.fill"
         case .goToSong: "music.note"
         case .goToSection: "flag"
         }
@@ -56,6 +68,8 @@ enum MappableLiveAction: Codable, Hashable, Identifiable, Sendable {
         case .playPause: 1
         case .fade: 2
         case .loop: 3
+        case .panic: 4
+        case .filterSweep: 5
         case .goToSong(let index): 100 + index
         case .goToSection(let songIndex, let sectionIndex): 10_000 + songIndex * 1_000 + sectionIndex
         }

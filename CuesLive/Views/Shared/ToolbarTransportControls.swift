@@ -13,6 +13,16 @@ struct ToolbarTransportControls: View {
     let onPlayPause: () -> Void
     let onToggleFade: () -> Void
     let onToggleLoop: () -> Void
+    /// Setlist-only extras. The editor leaves them out and shows neither button.
+    var filterSweep: FilterSweep?
+    var onPanic: (() -> Void)?
+
+    /// The low-pass filter sweep toggle's state and action.
+    struct FilterSweep {
+        let isOn: Bool
+        let isEnabled: Bool
+        let toggle: () -> Void
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -26,6 +36,10 @@ struct ToolbarTransportControls: View {
 
             fadeToggle
 
+            if let filterSweep {
+                filterSweepToggle(filterSweep)
+            }
+
             Toggle(isOn: Binding(get: { isLooping }, set: { _ in onToggleLoop() })) {
                 Label("Loop Section", systemImage: "repeat")
             }
@@ -33,6 +47,15 @@ struct ToolbarTransportControls: View {
             .disabled(!canLoop)
             .help("Loop Section")
             .mappableLiveControl(.loop)
+
+            if let onPanic {
+                Button(action: onPanic) {
+                    Label("Panic", systemImage: "arrow.uturn.backward.circle.fill")
+                }
+                .foregroundStyle(AppColors.transportPanic)
+                .help("Panic: back to one bar before this section")
+                .mappableLiveControl(.panic)
+            }
         }
         .labelStyle(.iconOnly)
         .toggleStyle(.button)
@@ -62,6 +85,16 @@ struct ToolbarTransportControls: View {
         }
         .mappableLiveControl(.fade)
         .contextMenu { FadeSettingsMenu() }
+    }
+
+    private func filterSweepToggle(_ sweep: FilterSweep) -> some View {
+        Toggle(isOn: Binding(get: { sweep.isOn }, set: { _ in sweep.toggle() })) {
+            Label("Filter Sweep", systemImage: "dial.low.fill")
+        }
+        .tint(AppColors.transportFade)
+        .disabled(!sweep.isEnabled)
+        .help("Filter Sweep: close the low-pass filter, or open it again")
+        .mappableLiveControl(.filterSweep)
     }
 
     private var fadeToggleContent: some View {

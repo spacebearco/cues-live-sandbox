@@ -39,6 +39,8 @@ struct LivePlaybackView: View {
     @State var cueFlashPhase = false
     @State var sectionLoop = SectionLoopController()
     @State var groupMixFade = GroupMixFadeController()
+    /// Edit mode only: all audio goes to the Me Time output while this is on.
+    @State var isMeTimeOn = false
     #if os(macOS)
     @State var mixMeter = MixMeterModel()
     #endif
@@ -332,10 +334,11 @@ struct LivePlaybackView: View {
                     cueFlashPhase.toggle()
                 }
             }
-            .onChange(of: coordinator.currentSong?.id) { _, songID in
+            .onChange(of: coordinator.currentSong?.id) { oldSongID, songID in
                 SetlistEditorLink.shared.activeSongDidChange(to: songID)
                 clearMarkerCue()
                 sectionLoop.reset()
+                switchSongMix(from: oldSongID, to: songID)
                 groupMixFade.cancel()
                 prepareSectionAnnouncements()
             }
@@ -352,10 +355,7 @@ struct LivePlaybackView: View {
                     activeSetlistID = setlist.id
                 }
                 coordinator.routingProvider = {
-                    let channelCount = AudioOutputDeviceService.channelCount(
-                        for: OutputRoutingStore.config(in: modelContext).selectedDeviceUID
-                    )
-                    return OutputRoutingStore.snapshot(in: modelContext, channelCount: channelCount)
+                    liveRoutingSnapshot()
                 }
                 coordinator.groupMixProvider = {
                     groupMixFade.applying(to: GroupMixStore.snapshot(in: modelContext))
@@ -409,9 +409,12 @@ struct LivePlaybackView: View {
                 handleSongEditorDismissed(newValue)
             }
             .onChange(of: playMode) { _, mode in
-                // Show mode locks editing, so an open editor closes.
-                guard mode == .show, isSongEditorOpen else { return }
-                toggleSongEditor()
+                // Show mode locks editing, so an open editor closes and Me Time ends.
+                guard mode == .show else { return }
+                endMeTime()
+                if isSongEditorOpen {
+                    toggleSongEditor()
+                }
             }
             .liveInputMappingSession(arePlaybackActionsEnabled: songToEditID == nil) { action in
                 handleMappedLiveAction(action)
@@ -507,12 +510,17 @@ struct LivePlaybackView: View {
             isWaveformVisible: isWaveformVisible,
             isMixerVisible: mixerDetent == .visible,
             isEditorOpen: isSongEditorOpen,
+            isMeTimeOn: isMeTimeOn,
             onStop: stopPlayback,
             onToggleLoop: toggleSectionLoop,
             onToggleFade: toggleGroupMixFade,
             onToggleWaveform: toggleWaveform,
             onToggleMixer: toggleMixer,
-            onToggleEditor: toggleSongEditor
+            onToggleEditor: toggleSongEditor,
+            onPanic: panicToSectionStart,
+            onToggleFilterSweep: toggleFilterSweep,
+            onToggleMeTime: toggleMeTime,
+            onMeTimeOutputChanged: { if isMeTimeOn { coordinator.applyOutputRouting() } }
         )
     }
 

@@ -279,6 +279,9 @@ struct RemoteLivePlaybackView: View {
             client.send(.toggleFade)
         case .loop:
             client.send(.toggleSectionLoop)
+        case .panic, .filterSweep:
+            // Host-only controls; the remote has no command for them.
+            break
         case .goToSong(let index):
             client.send(.goToSong(index: index, autoPlay: state.isAudiblePlaying))
         case .goToSection(let songIndex, let sectionIndex):

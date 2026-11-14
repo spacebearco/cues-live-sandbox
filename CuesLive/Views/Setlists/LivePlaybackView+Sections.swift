@@ -35,6 +35,10 @@ extension LivePlaybackView {
             toggleGroupMixFade()
         case .loop:
             toggleSectionLoop()
+        case .panic:
+            panicToSectionStart()
+        case .filterSweep:
+            toggleFilterSweep()
         case .goToSong(let index):
             coordinator.goToSong(at: index, autoPlay: coordinator.isAudiblePlaying)
         case .goToSection(let songIndex, let sectionIndex):

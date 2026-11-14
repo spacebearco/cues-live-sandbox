@@ -8,14 +8,29 @@ struct OutputRoutingSnapshot {
     let channelCount: Int
     /// The "Cues" track group. Smart Guide callouts follow its destination, fader, and mute.
     var guideGroupID: UUID?
+    /// Where a group with no saved route plays. Me Time points it at its own output.
+    var fallbackDestination: OutputDestination = .defaultDestination
 
     /// True when any group (or the ungrouped bus) is routed somewhere other than
     /// the default full stereo pair — e.g. pinned to a single mono channel. On a
     /// stereo-only device this signals that AU channel-map routing is needed
     /// instead of the plain master-mixer path, so that routing is honored.
     var hasNonDefaultRouting: Bool {
-        if ungroupedDestination != .defaultDestination { return true }
+        if ungroupedDestination != .defaultDestination || fallbackDestination != .defaultDestination { return true }
         return routesByGroupID.values.contains { $0 != .defaultDestination }
+    }
+
+    /// Everything that is heard, sent to one destination instead: Me Time. Groups routed to
+    /// No Output (timecode, by default) stay silent.
+    func routingEverything(to destination: OutputDestination) -> OutputRoutingSnapshot {
+        OutputRoutingSnapshot(
+            deviceUID: deviceUID,
+            routesByGroupID: routesByGroupID.mapValues { $0 == .none ? .none : destination },
+            ungroupedDestination: ungroupedDestination == .none ? .none : destination,
+            channelCount: channelCount,
+            guideGroupID: guideGroupID,
+            fallbackDestination: destination
+        )
     }
 }
 
@@ -165,6 +180,6 @@ enum OutputRoutingStore {
         guard let groupID else {
             return snapshot.ungroupedDestination
         }
-        return snapshot.routesByGroupID[groupID] ?? .defaultDestination
+        return snapshot.routesByGroupID[groupID] ?? snapshot.fallbackDestination
     }
 }

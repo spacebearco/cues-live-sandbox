@@ -14,6 +14,56 @@ Newest first.
 
 ---
 
+## Build 20 – Batch 3: Panic, Me Time, song mixes
+
+From Josh's notes of 2026-11-13 (`SANDBOX_TODO.md`, batch 3), plus a lag report on build 19.
+
+- **Panic button** (toolbar, after Loop; mappable). Jumps to one bar before the start of the
+  section playing and keeps playing (starts playback if stopped), so the band gets a bar of
+  pre-roll back into the section. Outside every section it goes back one bar. Any cue or loop
+  is cleared. `ShowJumpPlanner.panicTarget`, `LivePlaybackView.panicToSectionStart`.
+- **Filter Sweep button** (toolbar, after Fade; mappable to a key or MIDI note). Closes the
+  low-pass filter over the Fade length without touching the levels; press again to open it.
+  Disabled while a fade is running or faded out, since the fade owns the filter then.
+  `GroupMixFadeController.toggleFilterSweep`, `isFilterSwept`.
+- **Me Time** (headphones button beside the editor button, Edit mode only). While on, every
+  group that is heard plays from one stereo pair on the selected device; groups on No Output
+  stay silent. Right-click picks the pair (default 3-4, or the last pair on a smaller device).
+  Switching to Show turns it off. `OutputRoutingSnapshot.routingEverything(to:)` with a new
+  `fallbackDestination`, `MeTimeSettings`, `MeTimeToolbarToggle`.
+  - Turning it on or off reloads the song's routing (`applyOutputRouting`), so there is a short
+    dropout. A second audio device is not supported; that needs a second output in the engine.
+- **Setlist faders are per song.** Each song remembers the group fader levels it had. Leaving
+  a song saves them; arriving at a song with a saved mix sets the faders to it. A song that
+  has none yet keeps the levels that are up. Stored in `UserDefaults` by song ID
+  (`SongGroupMixStore`), not in the song file. Mutes stay global. Nothing is saved or applied
+  while a fade is running or faded out.
+  - Josh asked for the faders to follow the levels in the editor. This is a setlist-side mix
+    per song on top of the editor's track gains, not the same control. Tying a group fader to
+    the track gains would need a rule for groups with several tracks.
+- **Fader drags:** grabbing the thumb no longer makes it jump to the pointer; it keeps the
+  offset from where it was grabbed. A click on the track still jumps there (`MixerFaderColumn`).
+  A guess at "visually glitchy".
+- **Meters glide:** the setlist meter and the group meters animate between their 30 Hz
+  readings instead of stepping. A guess at "stutter-y"; the readings are unchanged.
+- **Lag in build 19:** Josh reported the waveform strip and the whole window lag while
+  scrolling. Not reproduced (this Mac's library is empty). The song names above the lanes were
+  SwiftUI text inside the strip; they are now drawn by `LiveSetlistLanePainter` in the canvas
+  (`LiveSetlistLanePainter+Header.swift`) and stay pinned to the left edge while their lane is
+  in view. If the lag is still there, a `sample` of the app while scrolling will show the cause.
+
+Files: `MappableLiveAction.swift`, `ShowJumpPlanner.swift`, `GroupMixFadeController.swift`,
+`OutputRoutingStore.swift`, `MeTimeSettings.swift` (new), `SongGroupMixStore.swift` (new),
+`MeTimeToolbarToggle.swift` (new), `LivePlaybackView+LiveExtras.swift` (new),
+`LiveSetlistLanePainter+Header.swift` (new), `LiveSetlistTransportToolbar.swift`,
+`LivePlaybackView.swift`, `TrackMixControls.swift`, `SetlistMixMeterView.swift`;
+`LiveSetlistLaneHeader.swift` removed.
+
+Tests: `ShowJumpPlannerTests` (panic target), `OutputRoutingManagerTests` (Me Time routing and
+output fallback), `SongGroupMixStoreTests` (new). Full suite passes; Mac and iOS build clean.
+
+---
+
 ## Build 19 – Toolbar title spacing
 
 Josh sent a screenshot: the playing song's title in the toolbar sat tight against the transport

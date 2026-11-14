@@ -18,6 +18,8 @@ final class LiveSetlistLanePainter {
     struct Song: Equatable {
         /// Setlist position, matching the scroll model's lanes.
         let index: Int
+        /// Song name, drawn above the lane.
+        let title: String
         let source: LiveSetlistWaveformSource
         /// The in-to-out stretch the lane shows.
         let window: LiveLaneWindow
@@ -39,6 +41,9 @@ final class LiveSetlistLanePainter {
         var playedMarkerColor = CGColor(gray: 1, alpha: 1)
         /// Ribbon right of the playhead in the current song.
         var unplayedMarkerColor = CGColor(gray: 0.5, alpha: 1)
+        /// Header text of the current song, and of the others.
+        var titleColor = CGColor(gray: 1, alpha: 1)
+        var dimTitleColor = CGColor(gray: 1, alpha: 0.6)
     }
 
     /// Where things are this frame, in strip coordinates. Compared each display-link frame, so
@@ -104,6 +109,7 @@ final class LiveSetlistLanePainter {
         for song in scene.songs {
             guard let frame = layout.lanes[song.index] else { continue }
             let laneRect = frame.offsetBy(dx: -layout.origin.x, dy: -layout.origin.y)
+            drawHeader(song, above: laneRect, in: rect, context: context)
             let shown = laneRect.intersection(rect)
             guard !shown.isNull, shown.width > 0, shown.height > 0 else { continue }
             draw(song, in: laneRect, shown: shown, context: context)

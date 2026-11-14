@@ -143,6 +143,8 @@ struct LiveSetlistWaveformScrollView: View {
                 timeSeconds: timeSeconds,
                 extraHeight: midiLanesExtraHeight
             )
+            // Level with the waveforms, below the row the song names are drawn in.
+            .padding(.top, headerHeight)
 
         case .song(let songID, let playbackIndex, let transitionAfter, let overlapSeconds):
             HStack(alignment: .top, spacing: 0) {
@@ -158,6 +160,7 @@ struct LiveSetlistWaveformScrollView: View {
                             ? { onOverlapTapped?(playbackIndex) }
                             : nil
                     )
+                    .padding(.top, headerHeight)
                 }
             }
         }
@@ -203,12 +206,10 @@ struct LiveSetlistWaveformScrollView: View {
         let laneContentWidth = laneContentWidth(for: snapshot)
 
         VStack(alignment: .leading, spacing: 0) {
-            LiveSetlistLaneHeader(
-                number: playbackIndex + 1,
-                title: snapshot.songName,
-                isCurrent: isCurrent,
-                width: laneContentWidth
-            )
+            // Room for the song name, which the lane canvas draws.
+            Color.clear
+                .frame(width: laneContentWidth, height: headerHeight)
+                .accessibilityLabel("Song \(playbackIndex + 1), \(snapshot.songName)")
 
             LiveSongWaveformView(
                 contentWidth: laneContentWidth,

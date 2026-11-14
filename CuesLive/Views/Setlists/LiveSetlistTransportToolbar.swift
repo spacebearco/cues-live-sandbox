@@ -11,12 +11,17 @@ struct LiveSetlistTransportToolbarContent: ToolbarContent {
     let isWaveformVisible: Bool
     let isMixerVisible: Bool
     let isEditorOpen: Bool
+    var isMeTimeOn = false
     let onStop: () -> Void
     let onToggleLoop: () -> Void
     let onToggleFade: () -> Void
     let onToggleWaveform: () -> Void
     let onToggleMixer: () -> Void
     let onToggleEditor: () -> Void
+    var onPanic: () -> Void = {}
+    var onToggleFilterSweep: () -> Void = {}
+    var onToggleMeTime: () -> Void = {}
+    var onMeTimeOutputChanged: () -> Void = {}
 
     @ToolbarContentBuilder
     var body: some ToolbarContent {
@@ -36,6 +41,14 @@ struct LiveSetlistTransportToolbarContent: ToolbarContent {
                 isOn: isEditorOpen,
                 action: onToggleEditor
             )
+
+            #if os(macOS)
+            MeTimeToolbarToggle(
+                isOn: isMeTimeOn,
+                onToggle: onToggleMeTime,
+                onOutputChanged: onMeTimeOutputChanged
+            )
+            #endif
         }
 
         ToolbarItem(placement: .principal) {
@@ -46,7 +59,9 @@ struct LiveSetlistTransportToolbarContent: ToolbarContent {
                 canLoop: canLoop,
                 onStop: onStop,
                 onToggleLoop: onToggleLoop,
-                onToggleFade: onToggleFade
+                onToggleFade: onToggleFade,
+                onPanic: onPanic,
+                onToggleFilterSweep: onToggleFilterSweep
             )
         }
 
@@ -75,6 +90,8 @@ private struct LiveToolbarTransportControls: View {
     let onStop: () -> Void
     let onToggleLoop: () -> Void
     let onToggleFade: () -> Void
+    let onPanic: () -> Void
+    let onToggleFilterSweep: () -> Void
 
     var body: some View {
         ToolbarTransportControls(
@@ -87,7 +104,13 @@ private struct LiveToolbarTransportControls: View {
             onStop: onStop,
             onPlayPause: togglePlayback,
             onToggleFade: onToggleFade,
-            onToggleLoop: onToggleLoop
+            onToggleLoop: onToggleLoop,
+            filterSweep: ToolbarTransportControls.FilterSweep(
+                isOn: groupMixFade.isFilterSwept,
+                isEnabled: !groupMixFade.isFadedOut && !groupMixFade.isFading,
+                toggle: onToggleFilterSweep
+            ),
+            onPanic: onPanic
         )
     }
 

@@ -19,6 +19,8 @@ final class GroupMixFadeController {
 
     private(set) var isFadedOut = false
     private(set) var isFading = false
+    /// True while the standalone filter sweep is closed or closing (`toggleFilterSweep`).
+    private(set) var isFilterSwept = false
 
     @ObservationIgnored private(set) var filterClosure = 0.0
     /// Levels the running fade has reached, by group (and `ungroupedID`). Empty when idle.
@@ -83,6 +85,7 @@ final class GroupMixFadeController {
         savedVolumes = [:]
         liveVolumes = [:]
         filterClosure = 0
+        isFilterSwept = false
         setPhase(.idle)
     }
 
@@ -91,6 +94,7 @@ final class GroupMixFadeController {
         rampGeneration += 1
         liveVolumes = [:]
         filterClosure = 0
+        isFilterSwept = false
 
         guard !savedVolumes.isEmpty else {
             setPhase(.idle)
@@ -125,6 +129,26 @@ final class GroupMixFadeController {
         case .fadingOut, .fadedOut:
             beginFadeIn(context: context, duration: duration, onMixChange: onMixChange, onComplete: onComplete)
         }
+    }
+
+    /// Closes the low-pass filter over `duration` seconds without touching the levels, or opens
+    /// it again. Does nothing while a fade is running or faded out; the fade owns the filter then.
+    func toggleFilterSweep(
+        context: ModelContext,
+        duration: TimeInterval,
+        onMixChange: @escaping () -> Void
+    ) {
+        guard phase == .idle else { return }
+        isFilterSwept.toggle()
+        startRamp(
+            targets: [:],
+            filterTarget: isFilterSwept ? 1 : 0,
+            sweepsFilter: true,
+            duration: duration,
+            context: context,
+            onMixChange: onMixChange,
+            onComplete: {}
+        )
     }
 
     private func beginFadeOut(
@@ -189,6 +213,7 @@ final class GroupMixFadeController {
             onMixChange: onMixChange
         ) { [weak self] in
             self?.savedVolumes = [:]
+            self?.isFilterSwept = false
             self?.setPhase(.idle)
             onComplete?()
         }
@@ -199,6 +224,7 @@ final class GroupMixFadeController {
     private func startRamp(
         targets: [UUID: Double],
         filterTarget: Double,
+        sweepsFilter: Bool = FadeButtonSettings.sweepsFilter,
         duration: TimeInterval,
         context: ModelContext,
         onMixChange: @escaping () -> Void,
@@ -214,10 +240,12 @@ final class GroupMixFadeController {
         for group in groups where targets[group.id] != nil {
             starts[group.id] = liveVolumes[group.id] ?? group.volume
         }
-        starts[Self.ungroupedID] = liveVolumes[Self.ungroupedID] ?? config.ungroupedVolume
+        if targets[Self.ungroupedID] != nil {
+            starts[Self.ungroupedID] = liveVolumes[Self.ungroupedID] ?? config.ungroupedVolume
+        }
 
         let filterStart = filterClosure
-        let sweeps = FadeButtonSettings.sweepsFilter
+        let sweeps = sweepsFilter
         let length = max(duration, Self.stepInterval)
         let began = ProcessInfo.processInfo.systemUptime
 

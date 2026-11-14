@@ -121,16 +121,20 @@ private struct MixMeterBar: View {
                 .mask(alignment: .bottom) {
                     Rectangle().frame(height: height * MixMeterScale.fraction(peak))
                 }
+                // Glides between the 30 Hz readings instead of stepping.
+                .animation(.linear(duration: 0.05), value: peak)
                 Rectangle()
                     .fill(AppColors.textPrimary)
                     .frame(height: 2)
                     .offset(y: -height * MixMeterScale.fraction(hold))
                     .opacity(hold > MixMeterScale.bottom ? 1 : 0)
+                    .animation(.linear(duration: 0.05), value: hold)
                 Rectangle()
                     .fill(AppColors.textPrimary.opacity(0.5))
                     .frame(height: 1)
                     .offset(y: -height * MixMeterScale.fraction(rms))
                     .opacity(rms > MixMeterScale.bottom ? 1 : 0)
+                    .animation(.linear(duration: 0.05), value: rms)
             }
         }
         .frame(width: 14)

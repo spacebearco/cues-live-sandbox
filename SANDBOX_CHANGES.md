@@ -14,6 +14,40 @@ Newest first.
 
 ---
 
+## Build 24 – Smoother fades
+
+Josh: "When toggling the fade out and in, it stutters visually. The setlist waveform can look
+jittery."
+
+Cause (read from the code, not profiled): the fade did database work on the main thread.
+
+- Every step of the ramp (60 a second) rebuilt the saved mix with SwiftData fetches
+  (`GroupMixStore.snapshot`: the groups and the routing config).
+- When the fade landed it wrote the groups' volumes and saved the library. A save re-fetches
+  every `@Query` in the window, which re-renders the whole setlist screen (about 0.3 s on
+  Josh's setlist, see build 23).
+
+Change, all in `GroupMixFadeController`:
+
+- **The fade never writes the groups' saved volumes.** Its levels stay in the controller from
+  the first step until the fade-in lands (`liveVolumes`: in between while it runs, zero while
+  faded out). `savedVolumes` is gone; a fade-in ramps back to the volumes the groups still have.
+- **A ramp reads the saved mix once**, when it starts (`rampBase`). Callers ask for
+  `mix(over:)` instead of `applying(to: GroupMixStore.snapshot(...))`.
+- No library save when a fade lands (setlist and editor).
+
+Visible difference: while faded out, the group faders stay where they are instead of dropping
+to the bottom. The Fade button shows the state.
+
+The waveform jitter is expected to be the same stalls (the strip follows the playhead on the
+main thread). Not confirmed.
+
+Tests: full suite passes (`LiveEditPlaybackTests.testSplitAndJumpWhilePlayingLeaveNoGap`
+failed once in the full run and passes in isolation; it drives the real engine on a timer).
+Mac and iOS build clean.
+
+---
+
 ## Build 23 – Fade in to a section, cue lag fix
 
 **Fade-in replaces Panic.** Josh: Panic "is not exactly what I want. The intent is to get a

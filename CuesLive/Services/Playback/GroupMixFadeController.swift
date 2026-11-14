@@ -7,10 +7,10 @@ import SwiftData
 /// sweep follows the fade unless it is turned off: `filterClosure` goes from 0 (open) to 1
 /// (closed) as the level falls.
 ///
-/// While a fade runs, the in-between levels live here and reach the engine through
-/// `applying(to:)`; the groups' saved volumes are written once, when the fade lands. Writing
-/// them on every step redrew everything that shows a group (meters included) sixty times a
-/// second, which made the screen stutter.
+/// The fade never touches the groups' saved volumes. Its levels live here, from the first step
+/// until the fade-in lands, and reach the engine through `mix(over:)`. Writing the volumes
+/// (even once, when the fade landed) and reading the saved mix on every step made the library
+/// save and re-fetch, which redrew the whole window and made the screen stutter.
 @MainActor
 @Observable
 final class GroupMixFadeController {
@@ -23,12 +23,14 @@ final class GroupMixFadeController {
     private(set) var isFilterSwept = false
 
     @ObservationIgnored private(set) var filterClosure = 0.0
-    /// Levels the running fade has reached, by group (and `ungroupedID`). Empty when idle.
+    /// Levels the fade has reached, by group (and `ungroupedID`): in between while it runs, zero
+    /// while faded out. Empty when idle.
     @ObservationIgnored private var liveVolumes: [UUID: Double] = [:]
+    /// The saved mix as it was when the running ramp began, so a step reads no database.
+    @ObservationIgnored private var rampBase: GroupMixSnapshot?
     /// The groups the fade and its filter sweep act on.
     @ObservationIgnored private var fadedGroupIDs: Set<UUID> = []
     @ObservationIgnored private var phase: Phase = .idle
-    @ObservationIgnored private var savedVolumes: [UUID: Double] = [:]
     @ObservationIgnored private var rampGeneration = 0
 
     private enum Phase {
@@ -44,8 +46,14 @@ final class GroupMixFadeController {
         isFading = newPhase == .fadingOut || newPhase == .fadingIn
     }
 
-    /// `snapshot` as the fade has it now: the faded groups at their in-between levels, with the
-    /// filter sweep on them. Unchanged when no fade is running.
+    /// The mix to play now: the saved mix with the fade's levels and filter sweep on top.
+    /// `savedMix` is only read between ramps; a running ramp uses the mix it started from.
+    func mix(over savedMix: () -> GroupMixSnapshot) -> GroupMixSnapshot {
+        applying(to: rampBase ?? savedMix())
+    }
+
+    /// `snapshot` as the fade has it now: the faded groups at the fade's levels, with the
+    /// filter sweep on them. Unchanged when no fade is in effect.
     func applying(to snapshot: GroupMixSnapshot) -> GroupMixSnapshot {
         guard !liveVolumes.isEmpty || filterClosure > 0 else { return snapshot }
         var volumes = snapshot.volumeByGroupID
@@ -72,6 +80,7 @@ final class GroupMixFadeController {
     /// Stops the ramp where it is. The levels it reached stay in effect.
     func cancel() {
         rampGeneration += 1
+        rampBase = nil
         switch phase {
         case .fadingOut, .fadingIn:
             setPhase(.fadedOut)
@@ -82,36 +91,20 @@ final class GroupMixFadeController {
 
     func reset() {
         rampGeneration += 1
-        savedVolumes = [:]
+        rampBase = nil
         liveVolumes = [:]
         filterClosure = 0
         isFilterSwept = false
         setPhase(.idle)
     }
 
-    /// Stops any in-flight fade and immediately restores saved group levels.
+    /// Stops any in-flight fade and goes straight back to the saved group levels.
     func clearFade(context: ModelContext, onMixChange: @escaping () -> Void) {
         rampGeneration += 1
+        rampBase = nil
         liveVolumes = [:]
         filterClosure = 0
         isFilterSwept = false
-
-        guard !savedVolumes.isEmpty else {
-            setPhase(.idle)
-            onMixChange()
-            return
-        }
-
-        for group in fadeableGroups(in: context) {
-            if let volume = savedVolumes[group.id] {
-                group.volume = volume
-            }
-        }
-        if let volume = savedVolumes[Self.ungroupedID] {
-            OutputRoutingStore.config(in: context).ungroupedVolume = volume
-        }
-
-        savedVolumes = [:]
         setPhase(.idle)
         onMixChange()
     }
@@ -158,15 +151,6 @@ final class GroupMixFadeController {
         onComplete: (() -> Void)?
     ) {
         let groups = fadeableGroups(in: context)
-        if savedVolumes.isEmpty {
-            var saved: [UUID: Double] = [:]
-            for group in groups {
-                saved[group.id] = group.volume
-            }
-            saved[Self.ungroupedID] = OutputRoutingStore.config(in: context).ungroupedVolume
-            savedVolumes = saved
-        }
-
         var targets: [UUID: Double] = [Self.ungroupedID: 0]
         for group in groups {
             targets[group.id] = 0
@@ -191,7 +175,7 @@ final class GroupMixFadeController {
         onMixChange: @escaping () -> Void,
         onComplete: (() -> Void)?
     ) {
-        guard !savedVolumes.isEmpty else {
+        guard !liveVolumes.isEmpty else {
             setPhase(.idle)
             return
         }
@@ -199,10 +183,9 @@ final class GroupMixFadeController {
         let groups = fadeableGroups(in: context)
         var targets: [UUID: Double] = [:]
         for group in groups {
-            targets[group.id] = savedVolumes[group.id] ?? group.volume
+            targets[group.id] = group.volume
         }
-        targets[Self.ungroupedID] = savedVolumes[Self.ungroupedID]
-            ?? OutputRoutingStore.config(in: context).ungroupedVolume
+        targets[Self.ungroupedID] = OutputRoutingStore.config(in: context).ungroupedVolume
 
         setPhase(.fadingIn)
         startRamp(
@@ -212,15 +195,15 @@ final class GroupMixFadeController {
             context: context,
             onMixChange: onMixChange
         ) { [weak self] in
-            self?.savedVolumes = [:]
+            self?.liveVolumes = [:]
             self?.isFilterSwept = false
             self?.setPhase(.idle)
             onComplete?()
         }
     }
 
-    /// Ramps from where the levels are now (mid-fade or saved) to `targets`, then writes the
-    /// targets to the groups once.
+    /// Ramps from where the levels are now (mid-fade or saved) to `targets`. The levels stay
+    /// in `liveVolumes` afterwards; a fade-in clears them in `onComplete`.
     private func startRamp(
         targets: [UUID: Double],
         filterTarget: Double,
@@ -244,6 +227,7 @@ final class GroupMixFadeController {
             starts[Self.ungroupedID] = liveVolumes[Self.ungroupedID] ?? config.ungroupedVolume
         }
 
+        rampBase = GroupMixStore.snapshot(in: context)
         let filterStart = filterClosure
         let sweeps = sweepsFilter
         let length = max(duration, Self.stepInterval)
@@ -265,16 +249,9 @@ final class GroupMixFadeController {
                 try? await Task.sleep(for: .seconds(Self.stepInterval))
             }
             guard let self, self.rampGeneration == generation else { return }
-            for group in groups {
-                if let target = targets[group.id] {
-                    group.volume = target
-                }
-            }
-            if let target = targets[Self.ungroupedID] {
-                config.ungroupedVolume = target
-            }
-            self.liveVolumes = [:]
+            self.rampBase = nil
             onComplete()
+            onMixChange()
         }
     }
 

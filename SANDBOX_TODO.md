@@ -2,7 +2,7 @@
 
 Josh's open notes (2026-11-13), grouped into batches. Work one batch per session: make all the
 changes, then build Mac and iOS and run the full tests once, deliver one numbered build, and log
-it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 23 (batches 1
+it in `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 24 (batches 1
 to 3 done).
 
 ## Open

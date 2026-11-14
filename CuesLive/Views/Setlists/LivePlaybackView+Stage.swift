@@ -80,8 +80,6 @@ extension LivePlaybackView {
         let duration = (groupMixFade.isFadedOut ? enterSectionForFadeIn() : nil) ?? coordinator.fadeButtonDuration
         groupMixFade.toggleFade(context: modelContext, duration: duration) {
             coordinator.updateGroupMix(context: modelContext, persist: false)
-        } onComplete: {
-            coordinator.updateGroupMix(context: modelContext)
         }
     }
 

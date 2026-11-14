@@ -39,10 +39,7 @@ extension EditView {
             timeSignatureChanges: normalizedTimeSignatureChanges
         )
         groupMixFade.toggleFade(context: modelContext, duration: duration) {
-            audioEngine.applyGroupMix(groupMixFade.applying(to: GroupMixStore.snapshot(in: modelContext)))
-        } onComplete: {
-            audioEngine.applyGroupMix(groupMixFade.applying(to: GroupMixStore.snapshot(in: modelContext)))
-            try? modelContext.save()
+            audioEngine.applyGroupMix(groupMixFade.mix { GroupMixStore.snapshot(in: modelContext) })
         }
     }
 

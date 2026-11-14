@@ -94,7 +94,9 @@ final class MixMeterBus: @unchecked Sendable {
     /// Render thread: adds one track's rendered block. Mono stems feed both sides.
     func add(slot: Int, buffers: UnsafeMutableAudioBufferListPointer, frameCount: Int) {
         guard slot >= 0, slot < Self.maxSlots, slotStates[slot] != 0 else { return }
-        let start = cursors[slot]
+        // A track that stopped rendering for a while rejoins where the meter is reading, so its
+        // audio never lands on frames that belong to later blocks.
+        let start = max(cursors[slot], readPosition)
         if slotStates[slot] == 2, buffers.count > 0,
            let leftSource = buffers[0].mData?.assumingMemoryBound(to: Float.self) {
             let rightSource = buffers.count > 1
@@ -114,8 +116,17 @@ final class MixMeterBus: @unchecked Sendable {
     func read(_ consume: (UnsafePointer<Float>, UnsafePointer<Float>, Int) -> Void) {
         readerLock.withLock {
             guard slotCount > 0 else { return }
-            var ready = Int64.max
-            for slot in 0..<slotCount {
+            // Wait only for measured tracks: a left-out one (click, timecode) adds nothing. A
+            // measured track that has stopped rendering altogether (far behind the others) is
+            // skipped too, so one silent node can never freeze the meter.
+            var newest = Int64.min
+            for slot in 0..<slotCount where slotStates[slot] == 2 {
+                newest = max(newest, cursors[slot])
+            }
+            guard newest > Int64.min else { return }
+            let stalled = newest - Int64(Self.capacity / 4)
+            var ready = newest
+            for slot in 0..<slotCount where slotStates[slot] == 2 && cursors[slot] >= stalled {
                 ready = min(ready, cursors[slot])
             }
             guard ready > readPosition else { return }

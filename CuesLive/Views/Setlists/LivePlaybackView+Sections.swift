@@ -105,7 +105,7 @@ extension LivePlaybackView {
         }
 
         cuedSectionID = section.id
-        let fireTime = sectionCueFireTime(for: section)
+        let fireTime = quantizedCueFireTime(for: section)
         cueFireTime = fireTime
 
         guard coordinator.isLoaded else { return }
@@ -113,6 +113,21 @@ extension LivePlaybackView {
             to: section.timelineStartSeconds,
             at: fireTime
         )
+    }
+
+    /// When a cue fires, from the Jump setting: the end of the section playing, the next bar line,
+    /// or the next beat.
+    private func quantizedCueFireTime(for cuedSection: SongSection) -> TimeInterval {
+        if let snapshot = coordinator.currentWaveformSnapshot,
+           let gridTime = ShowJumpPlanner.fireTime(
+               after: coordinator.currentTime,
+               quantize: showQuantize,
+               tempoChanges: snapshot.tempoChanges,
+               timeSignatureChanges: snapshot.timeSignatureChanges
+           ) {
+            return gridTime
+        }
+        return sectionCueFireTime(for: cuedSection)
     }
 
     private func sectionCueFireTime(for cuedSection: SongSection) -> TimeInterval {

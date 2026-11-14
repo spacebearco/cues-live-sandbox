@@ -14,6 +14,27 @@ Newest first.
 
 ---
 
+## Build 16 – Meter fix, section-first quantize, fade in bars, audible sweep, mode badge
+
+- **Setlist meter froze:** the sampling loop now belongs to each meter view's own `.task`, so a
+  view that Blake's layout rebuilds can't stop another view's loop. `MixMeterBus` also waits only
+  for measured tracks, skips a measured track that has stopped rendering, and lets a stalled track
+  rejoin at the read position. Tests in `MixMeterBusTests`. Not confirmed on Josh's machine.
+- **Quantize reworked:** a cue always targets the clicked section. The Jump menu (End of Section /
+  Next Bar / Next Beat) picks when it fires. This applies to clicks, the section list, mapped keys
+  and remote cues (`cueSection` → `ShowJumpPlanner.fireTime`). The menu shows in both modes.
+- **Fade length in bars** (1, 2, 4, 8 or 16; default 4), worked out from the song's tempo and meter
+  at the bar playing (`FadeButtonSettings.duration`, `PlaybackCoordinator.fadeButtonDuration`).
+- **Sweep audibility:** the filter now moves ahead of the level (`sweepCurve`), and the editor's
+  Fade button carries the sweep too. A real-engine test confirms a closed sweep cuts 5 kHz by more
+  than 40 dB (`FadeFilterEngineTests`).
+- **Meter stutter during fades:** `GroupMixFadeController` keeps in-between levels itself and
+  lays them over the engine's group mix (`applying(to:)`). It writes the groups' volumes once,
+  when the fade lands, instead of 60 database writes and fetches a second.
+- **Show / Edit badge:** a red SHOW (lock) or blue EDIT (pencil) badge beside the mode switch.
+
+---
+
 ## Build 15 – Rebased onto Blake's main, Show mode locks
 
 ### Rebased onto Blake's main

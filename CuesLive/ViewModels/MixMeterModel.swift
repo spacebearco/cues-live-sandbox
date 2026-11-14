@@ -8,34 +8,24 @@ final class MixMeterModel {
     private(set) var readings = MixMeterReadings()
 
     @ObservationIgnored private let sampler = MixMeterSampler()
-    @ObservationIgnored private var loop: Task<Void, Never>?
-    @ObservationIgnored private var engineID: ObjectIdentifier?
+    @ObservationIgnored private var attachedEngineID: ObjectIdentifier?
 
-    /// Meters `engine`, leaving out tracks in `excludedGroupIDs`. Safe to call repeatedly;
-    /// switching engines (an overlap handoff) starts the measurement over.
-    func meter(_ engine: AudioEngineManager, excludingGroups excludedGroupIDs: Set<UUID>) {
-        engine.setMixMeterExcludedGroups(excludedGroupIDs)
+    /// Samples `engine` until the calling task is cancelled. Each meter view runs this in its own
+    /// `.task`, so a view the layout rebuilds can never stop another one's loop. Switching
+    /// engines (an overlap handoff) starts the measurement over; the same engine carries on.
+    func run(on engine: AudioEngineManager) async {
         let id = ObjectIdentifier(engine)
-        guard id != engineID else { return }
-        engineID = id
-        let bus = engine.mixMeterBus
-        loop?.cancel()
-        loop = Task { [weak self, sampler] in
-            await sampler.attach(bus)
-            while !Task.isCancelled {
-                let now = ProcessInfo.processInfo.systemUptime
-                if let readings = await sampler.sample(at: now) {
-                    self?.publish(readings)
-                }
-                try? await Task.sleep(for: .milliseconds(33))
-            }
+        if id != attachedEngineID {
+            attachedEngineID = id
+            await sampler.attach(engine.mixMeterBus)
         }
-    }
-
-    func stop() {
-        loop?.cancel()
-        loop = nil
-        engineID = nil
+        while !Task.isCancelled {
+            let now = ProcessInfo.processInfo.systemUptime
+            if let readings = await sampler.sample(at: now) {
+                publish(readings)
+            }
+            try? await Task.sleep(for: .milliseconds(33))
+        }
     }
 
     func resetMeasurement() {

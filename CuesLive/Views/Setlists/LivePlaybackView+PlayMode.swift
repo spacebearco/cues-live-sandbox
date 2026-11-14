@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Clicks on the playing song's waveform. Show mode cues a jump on the musical grid (bar, beat
-/// or section, from the toolbar); Edit mode moves the playhead right where you click.
+/// Clicks on the playing song's waveform. Show mode cues the clicked section, firing at the end
+/// of the current section, the next bar or the next beat (the toolbar's Jump setting); Edit
+/// mode moves the playhead right where you click.
 extension LivePlaybackView {
     /// Stands in for a section when a bar or beat jump lands outside every section, so the cue
     /// monitor still fires.
@@ -22,18 +23,15 @@ extension LivePlaybackView {
         }
     }
 
+    /// A click on a section cues that section; the Jump setting decides when it fires. A song
+    /// without sections jumps to the clicked bar or beat line instead.
     private func showModeClick(at time: TimeInterval, in snapshot: LiveSongWaveformSnapshot) {
-        if showQuantize == .section {
-            if let section = snapshot.sections.section(atTimeline: time) {
-                cueSection(section)
-            } else {
-                clearMarkerCue()
-                coordinator.seek(to: time)
-            }
+        if let section = snapshot.sections.section(atTimeline: time) {
+            cueSection(section)
             return
         }
 
-        guard coordinator.isPlaying else {
+        guard showQuantize != .section, coordinator.isPlaying else {
             clearMarkerCue()
             coordinator.seek(to: ShowJumpPlanner.gridStart(
                 containing: time,

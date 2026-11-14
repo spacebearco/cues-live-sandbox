@@ -33,9 +33,15 @@ extension EditView {
     }
 
     func toggleGroupMixFade() {
-        groupMixFade.toggleFade(context: modelContext) {
-            audioEngine.applyGroupMix(GroupMixStore.snapshot(in: modelContext))
+        let duration = FadeButtonSettings.duration(
+            at: audioEngine.currentTime,
+            tempoChanges: normalizedTempoChanges,
+            timeSignatureChanges: normalizedTimeSignatureChanges
+        )
+        groupMixFade.toggleFade(context: modelContext, duration: duration) {
+            audioEngine.applyGroupMix(groupMixFade.applying(to: GroupMixStore.snapshot(in: modelContext)))
         } onComplete: {
+            audioEngine.applyGroupMix(groupMixFade.applying(to: GroupMixStore.snapshot(in: modelContext)))
             try? modelContext.save()
         }
     }

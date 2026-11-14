@@ -39,4 +39,15 @@ final class ShowJumpPlannerTests: XCTestCase {
         XCTAssertEqual(ShowJumpPlanner.gridStart(containing: 9.3, quantize: .bar, tempoChanges: tempo, timeSignatureChanges: meters), 8, accuracy: 1e-6)
         XCTAssertEqual(ShowJumpPlanner.gridStart(containing: 9.3, quantize: .beat, tempoChanges: tempo, timeSignatureChanges: meters), 9, accuracy: 1e-6)
     }
+
+    func testCueFiresOnTheNextBarOrBeatLine() {
+        XCTAssertEqual(ShowJumpPlanner.fireTime(after: 2.7, quantize: .bar, tempoChanges: tempo, timeSignatureChanges: meters) ?? 0, 4, accuracy: 1e-6)
+        XCTAssertEqual(ShowJumpPlanner.fireTime(after: 2.7, quantize: .beat, tempoChanges: tempo, timeSignatureChanges: meters) ?? 0, 3, accuracy: 1e-6)
+        XCTAssertNil(ShowJumpPlanner.fireTime(after: 2.7, quantize: .section, tempoChanges: tempo, timeSignatureChanges: meters))
+    }
+
+    func testFadeLengthFollowsTheSongsBars() {
+        XCTAssertEqual(FadeButtonSettings.duration(bars: 4, at: 5, tempoChanges: tempo, timeSignatureChanges: meters), 8, accuracy: 1e-6)
+        XCTAssertEqual(FadeButtonSettings.duration(bars: 2, at: 0, tempoChanges: [], timeSignatureChanges: []), 4, accuracy: 1e-6)
+    }
 }

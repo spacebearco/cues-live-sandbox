@@ -76,4 +76,27 @@ final class MixMeterBusTests: XCTestCase {
         let excluded = AudioEngineManager.mixMeterExcludedGroupIDs(in: groups)
         XCTAssertEqual(excluded, Set(groups.dropFirst().map(\.id)))
     }
+
+    /// Regression: a left-out track (click, timecode) that never renders must not freeze the meter.
+    func testLeftOutTrackThatNeverRendersDoesNotBlockTheMeter() {
+        let bus = MixMeterBus()
+        let music = UUID(), timecode = UUID()
+        let slots = bus.reset(sampleRate: 48_000, trackIDs: [music, timecode])
+        bus.setMeasured(true, trackID: music)
+        bus.setMeasured(false, trackID: timecode)
+        add(bus, slot: slots[music] ?? -1, value: 0.5, frames: 256)
+        XCTAssertEqual(readAll(bus).left.count, 256)
+    }
+
+    /// Regression: a measured track that stops rendering altogether is skipped, not waited for.
+    func testStalledMeasuredTrackIsSkipped() {
+        let bus = MixMeterBus()
+        let playing = UUID(), stalled = UUID()
+        let slots = bus.reset(sampleRate: 48_000, trackIDs: [playing, stalled])
+        bus.setMeasured(true, trackID: playing)
+        bus.setMeasured(true, trackID: stalled)
+        let frames = MixMeterBus.capacity / 4 + 512
+        add(bus, slot: slots[playing] ?? -1, value: 0.25, frames: frames)
+        XCTAssertEqual(readAll(bus).left.count, frames)
+    }
 }

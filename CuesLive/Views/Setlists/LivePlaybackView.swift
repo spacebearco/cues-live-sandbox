@@ -355,9 +355,7 @@ struct LivePlaybackView: View {
                     return OutputRoutingStore.snapshot(in: modelContext, channelCount: channelCount)
                 }
                 coordinator.groupMixProvider = {
-                    var snapshot = GroupMixStore.snapshot(in: modelContext)
-                    snapshot.fadeFilter = groupMixFade.fadeFilter(in: modelContext)
-                    return snapshot
+                    groupMixFade.applying(to: GroupMixStore.snapshot(in: modelContext))
                 }
                 coordinator.timecodeSettingsProvider = {
                     TimecodeSettingsStore.snapshot(in: modelContext)

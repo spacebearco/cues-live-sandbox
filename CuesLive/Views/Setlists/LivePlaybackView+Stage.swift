@@ -72,7 +72,7 @@ extension LivePlaybackView {
     }
 
     func toggleGroupMixFade() {
-        groupMixFade.toggleFade(context: modelContext) {
+        groupMixFade.toggleFade(context: modelContext, duration: coordinator.fadeButtonDuration) {
             coordinator.updateGroupMix(context: modelContext, persist: false)
         } onComplete: {
             coordinator.updateGroupMix(context: modelContext)

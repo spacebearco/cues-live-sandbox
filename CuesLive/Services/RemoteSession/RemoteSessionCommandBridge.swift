@@ -48,7 +48,7 @@ final class RemoteSessionCommandBridge {
         case .setGroupMuted(let groupID, let muted):
             applyMute(groupID: groupID, muted: muted, host: host)
         case .toggleFade:
-            host.groupMixFade.toggleFade(context: host.modelContext) {
+            host.groupMixFade.toggleFade(context: host.modelContext, duration: host.coordinator.fadeButtonDuration) {
                 host.coordinator.updateGroupMix(context: host.modelContext, persist: false)
             } onComplete: {
                 host.coordinator.updateGroupMix(context: host.modelContext)

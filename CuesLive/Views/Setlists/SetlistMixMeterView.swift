@@ -36,14 +36,13 @@ struct SetlistMixMeterView: View {
         .frame(width: Self.width)
         .frame(maxHeight: .infinity)
         .background(AppColors.backgroundSecondary)
-        .onAppear { model.meter(engine, excludingGroups: excludedGroupIDs) }
-        .onChange(of: ObjectIdentifier(engine)) { _, _ in
-            model.meter(engine, excludingGroups: excludedGroupIDs)
+        .task(id: ObjectIdentifier(engine)) {
+            engine.setMixMeterExcludedGroups(excludedGroupIDs)
+            await model.run(on: engine)
         }
         .onChange(of: excludedGroupIDs) { _, ids in
-            model.meter(engine, excludingGroups: ids)
+            engine.setMixMeterExcludedGroups(ids)
         }
-        .onDisappear { model.stop() }
     }
 
     private func clipLight(_ hasClipped: Bool) -> some View {

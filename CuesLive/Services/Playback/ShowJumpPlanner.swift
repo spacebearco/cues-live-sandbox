@@ -20,29 +20,47 @@ enum SetlistPlayMode: String, CaseIterable, Identifiable {
     static let lockedExplanation = "Locked in Show mode. Switch the setlist to Edit to change this."
 }
 
-/// Where a Show mode jump lands and when it fires.
+/// When a cued section fires. A cue always jumps to the start of the chosen section; this
+/// picks the moment it happens.
 enum ShowQuantize: String, CaseIterable, Identifiable {
-    /// Jumps to the start of the clicked bar when the current bar ends.
-    case bar
-    /// Jumps to the clicked beat on the next beat.
-    case beat
-    /// Jumps to the clicked section when the current section ends.
+    /// When the section playing now ends.
     case section
+    /// On the next bar line.
+    case bar
+    /// On the next beat.
+    case beat
 
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .bar: "Bar"
-        case .beat: "Beat"
-        case .section: "Section"
+        case .section: "End of Section"
+        case .bar: "Next Bar"
+        case .beat: "Next Beat"
         }
     }
 
     static let storageKey = "setlistShowQuantize"
 }
 
-/// Plans Show mode bar and beat jumps. Beats are quarter notes, as on the editor grid.
+/// Plans when cued jumps fire on the bar or beat grid. Beats are quarter notes, as on the
+/// editor grid.
 enum ShowJumpPlanner {
+    /// The next bar or beat line after `now`; `nil` for `.section`, which fires at the end of the
+    /// section playing (the setlist knows its sections).
+    static func fireTime(
+        after now: TimeInterval,
+        quantize: ShowQuantize,
+        tempoChanges: [TempoChange],
+        timeSignatureChanges: [TimeSignatureChange]
+    ) -> TimeInterval? {
+        guard !tempoChanges.isEmpty else { return nil }
+        switch quantize {
+        case .bar: return nextBarStart(after: now, tempoChanges, timeSignatureChanges)
+        case .beat: return nextBeatStart(after: now, tempoChanges, timeSignatureChanges)
+        case .section: return nil
+        }
+    }
+
     struct Jump: Equatable {
         /// Where playback lands: the start of the clicked bar or beat.
         let target: TimeInterval

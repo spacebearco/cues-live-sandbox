@@ -22,5 +22,9 @@ extension AppColors {
         static let transitionEdgeShadow = Color.black.opacity(0.4)
         /// Block for an overlap between songs, dark enough to carry white text.
         static let transitionOverlapRibbon = AppColors.transitionOverlap.darkened(sRGBBy: 0.55)
+        /// Setlist mode badge: red for Show, the edit head's blue for Edit, white text on both.
+        static let showModeBadge = AppColors.Mixer.meterOver
+        static let editModeBadge = AppColors.Timeline.editHead
+        static let modeBadgeText = Color.white
     }
 }

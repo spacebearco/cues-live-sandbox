@@ -1,8 +1,8 @@
 # Sandbox changes
 
 A running log of what changed in this fork (`spacebearco/cues-live-sandbox`, branch
-`spacebear/fixes`) compared with `blakeccross/cues-live`. Since build 15 the branch is based on
-Blake's main at `f18a137`. The fork is a sandbox for features
+`spacebear/fixes`) compared with `blakeccross/cues-live`. Since 2026-11-14 the branch is based on
+Blake's main at `dd41c02` (before that, `f18a137`). The fork is a sandbox for features
 Josh wants in cues.live: everything here is a working demo of an idea. Blake decides what goes
 into the real app and how.
 
@@ -11,6 +11,38 @@ files, the tests, and anything Blake should know before taking it. Builds are th
 in the Dropbox `Sandbox/Cues App` folder (`cues.live NN – Label.app`).
 
 Newest first.
+
+---
+
+## Rebase onto Blake's main at `dd41c02` (2026-11-14)
+
+No new build. Blake's main moved from `f18a137` to `dd41c02`, bringing clip fades, design tokens
+(colors in `Assets.xcassets`, `AppColors.*` areas), section blocks with draggable edges in the
+editor ruler, trailing measures after the song, a reworked song library and a shared toolbar
+transport. Every sandbox commit was replayed on top. Where both sides touched the same thing:
+
+- **Ours moved onto Blake's design system.** Our edit-head blue, meter colors and three extra
+  section colors are now asset tokens (`TimelineEditHead`, `MeterWarning`, `MeterOver`,
+  `ArrangementSection7–9`). `readableTextColor` / `prefersDarkText` moved to
+  `Color+SRGBAdjustments.swift`. `DAWColors.swift` is gone, as in Blake's main.
+- **Blake's version kept, ours dropped:** trailing space after the song
+  (`TimelineTrailingSpace`, not our `TimelineLayout.tailFraction`), the leading song-browser
+  pane (`LivePlaybackSidebarLayout`, not our `LiveSongBrowserSplitLayout`), and the centred
+  toolbar song title with Up Next (our build 19 left-alignment no longer applies).
+- **Combined:** clips carry both fades and mute. Copy, paste, split to mono and the tempo lock
+  keep a clip's fades. A live edit that only changes a fade now counts as changing the audio
+  (`ArrangementTimelineMapper.firstDifference`). The editor waveform draws fades and the
+  per-song waveform size together. Filter Sweep and the fade right-click menu are on Blake's
+  shared `ToolbarTransportControls` (Filter Sweep shows in the setlist only).
+- **Editor section ruler:** Blake's blocks keep his single click to select a block. Josh's
+  "click a marker to play it" (build 17) is now a **double-click** there. Blocks are filled
+  with the section's own color (as the setlist shows it) instead of gray; the selected block
+  stays white. Insert Bars and Duplicate Section are back on its right-click menu.
+- **Stopped insertion cursor:** our always-on blue edit head replaces it, so Blake's
+  `TimelineInsertionCursor` view and token were removed.
+
+The project file is Blake's with our sources registered and our local signing ("Sign to Run
+Locally", no team) kept.
 
 ---
 

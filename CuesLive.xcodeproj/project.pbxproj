@@ -896,6 +896,8 @@
 		CD7C8E0346FC914F706879DA /* WaveformColumnGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */; };
 		F5952E276BFDC3C8408A486B /* LivePlaybackView+SetlistLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */; };
 		FB2A8DD75DFEB1799FB889E9 /* LivePlaybackView+SetlistLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */; };
+		873DA78099C517FA576B2D92 /* SongLibraryListHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C7AA7BCD3540669C5968BB /* SongLibraryListHeader.swift */; };
+		E2B737DBC6ADF241B78D7886 /* SongLibraryListHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C7AA7BCD3540669C5968BB /* SongLibraryListHeader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1405,6 +1407,7 @@
 		941D6C7857A62A74672560F5 /* OverlapPreviewEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapPreviewEngineTests.swift; sourceTree = "<group>"; };
 		54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformColumnGeometry.swift; sourceTree = "<group>"; };
 		C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+SetlistLibrary.swift"; sourceTree = "<group>"; };
+		04C7AA7BCD3540669C5968BB /* SongLibraryListHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryListHeader.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1604,6 +1607,7 @@
 		AA0000050000000000000008 /* Songs */ = {
 			isa = PBXGroup;
 			children = (
+				04C7AA7BCD3540669C5968BB /* SongLibraryListHeader.swift */,
 				1D61C64668C9AC380403E696 /* SongUndoFocusedValue.swift */,
 				3DD5356727F542AF43C5B388 /* SongQuickEditPopover.swift */,
 				1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */,
@@ -2342,6 +2346,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				873DA78099C517FA576B2D92 /* SongLibraryListHeader.swift in Sources */,
 				CA8216011EA545CC6001E852 /* RemotePINAttemptLimiter.swift in Sources */,
 				51BF2A4CEB0538A1AA21EA25 /* SongUndoStacks.swift in Sources */,
 				2FE85583865AD76B11F77BEB /* CueFlash.swift in Sources */,
@@ -2837,6 +2842,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E2B737DBC6ADF241B78D7886 /* SongLibraryListHeader.swift in Sources */,
 				475F5959A3A82E16DD4D46D3 /* RemotePINAttemptLimiter.swift in Sources */,
 				BED4A00495953931F7856D8F /* SongUndoStacks.swift in Sources */,
 				C227AFA07445F143D53F0447 /* CueFlash.swift in Sources */,

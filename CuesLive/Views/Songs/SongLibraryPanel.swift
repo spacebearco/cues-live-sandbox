@@ -271,10 +271,14 @@ struct SongLibraryPanel: View {
     private var songCollection: some View {
         #if os(macOS)
         List(selection: $selection) {
-            ForEach(filteredSongs) { song in
-                SongLibraryListRow(song: song)
-                    .tag(song.id)
-                    .draggable(SongDragPayload.string(for: song.id))
+            Section {
+                ForEach(filteredSongs) { song in
+                    SongLibraryListRow(song: song)
+                        .tag(song.id)
+                        .draggable(SongDragPayload.string(for: song.id))
+                }
+            } header: {
+                SongLibraryListHeader()
             }
         }
         .listStyle(.plain)

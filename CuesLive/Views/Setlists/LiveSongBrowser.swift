@@ -42,7 +42,7 @@ struct LiveSongBrowser<Songs: View>: View {
                 withAnimation(AppAnimation.springSmooth) { showsFolders.toggle() }
             } label: {
                 Label(showsFolders ? "Hide Folders" : "Folders", systemImage: "sidebar.left")
-                    .font(.caption)
+                    .font(AppTypography.caption)
             }
             .buttonStyle(.borderless)
             .help(showsFolders ? "Fold the folder list away" : "Show the folder list")

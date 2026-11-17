@@ -26,6 +26,7 @@ extension EditView {
                 originY: row.originY,
                 height: row.height,
                 fileURL: fileURL,
+                sourceChannel: track.sourceChannel,
                 bodyColor: TrackGroupPalette.colors(forPaletteKey: track.group?.paletteKey).body,
                 clips: (clipsByTrack[track.id] ?? []).map { clip in
                     TimelineCanvasClip(clip, showsFadeCurves: showsFadeCurves(on: clip))

@@ -10,8 +10,9 @@ extension LiveGroupMixerView {
 
     /// The fader's value: linked to the song's tracks in the group when it has any, otherwise
     /// the group's own level.
+    /// A move is one undo step in the song's editor (`SongUndoStacks`).
     func faderLevel(groupVolume: Binding<Double>, tracks: [AudioTrack]) -> Binding<Double> {
-        guard !tracks.isEmpty else { return groupVolume }
+        guard let song, !tracks.isEmpty else { return groupVolume }
         return Binding(
             get: {
                 GroupFaderLink.level(groupVolume: groupVolume.wrappedValue, trackVolumes: tracks.map(\.volume))
@@ -22,9 +23,18 @@ extension LiveGroupMixerView {
                     groupVolume: groupVolume.wrappedValue,
                     toLevel: newLevel
                 )
+                let before = Dictionary(uniqueKeysWithValues: tracks.map { ($0.id, $0.volume) })
                 for (track, volume) in zip(tracks, scaled) {
                     track.volume = volume
                 }
+                let after = Dictionary(uniqueKeysWithValues: tracks.map { ($0.id, $0.volume) })
+                SongUndoStacks.registerTrackGainChange(
+                    "Change Group Level",
+                    song: song,
+                    before: before,
+                    after: after,
+                    apply: onTrackGainsChanged
+                )
             }
         )
     }

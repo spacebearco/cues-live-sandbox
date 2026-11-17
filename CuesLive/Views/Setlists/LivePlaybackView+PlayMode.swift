@@ -23,6 +23,14 @@ extension LivePlaybackView {
         }
     }
 
+    /// Edit mode: a drag on the playing song's waveform moves the playhead with the pointer.
+    func scrubWaveform(to time: TimeInterval) {
+        guard playMode == .edit else { return }
+        clearMarkerCue()
+        sectionLoop.endLoopIfActive()
+        coordinator.seek(to: time)
+    }
+
     /// A click on a section's name label plays that section. Stopped, playback starts from its
     /// first beat. Playing, Show mode cues it (on the Jump setting) and Edit mode jumps at once.
     func playSection(_ section: SongSection) {

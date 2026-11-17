@@ -13,6 +13,8 @@ final class TimelineLanePainter {
         let originY: CGFloat
         let height: CGFloat
         let fileURL: URL
+        /// The one file channel a split-to-mono track plays, or `nil` to draw every channel.
+        let sourceChannel: Int?
         let bodyColor: CGColor
         let clips: [TimelineCanvasClip]
     }
@@ -37,7 +39,7 @@ final class TimelineLanePainter {
         let sourceStart: TimeInterval
         let sourceDuration: TimeInterval
         let scale: CGFloat
-        let channelCount: Int
+        let drawnChannels: [Int]
         /// Identity of the raw samples the columns were taken from, or 0 for the pyramid.
         let sampleGeneration: Int
     }
@@ -136,7 +138,7 @@ final class TimelineLanePainter {
             context.addPath(fades.shade)
             context.fillPath()
         }
-        drawWaveform(span, fileURL: lane.fileURL, band: band, context: context)
+        drawWaveform(span, lane: lane, band: band, context: context)
         if let fades, clip.showsFadeCurves || clip.id == hoveredClipID {
             context.setStrokeColor(Self.fadeCurveColor)
             context.setLineWidth(1.2)
@@ -148,7 +150,8 @@ final class TimelineLanePainter {
         return true
     }
 
-    private func drawWaveform(_ span: ClipSpan, fileURL: URL, band: CGRect, context: CGContext) {
+    private func drawWaveform(_ span: ClipSpan, lane: Lane, band: CGRect, context: CGContext) {
+        let fileURL = lane.fileURL
         guard let overview = overviews[fileURL],
               let firstChannel = overview.channels.first,
               overview.sampleRate > 0,
@@ -158,6 +161,7 @@ final class TimelineLanePainter {
             return
         }
         let channelCount = overview.channels.count
+        let drawnChannels = overview.drawnChannels(for: lane.sourceChannel)
         let framesPerPoint = span.clip.sourceDuration * overview.sampleRate / Double(span.width)
         let origin = span.clip.sourceStart * overview.sampleRate
         let firstFrame = Int(floor(origin + Double(span.visibleX.lowerBound - span.startX) * framesPerPoint)) - 2
@@ -169,14 +173,14 @@ final class TimelineLanePainter {
             channelCount: channelCount,
             frames: frames
         )
-        let bandHeight = band.height / CGFloat(channelCount)
+        let bandHeight = band.height / CGFloat(max(1, drawnChannels.count))
 
         // A sample per device pixel or closer: the samples themselves, joined by a line.
         if framesPerPoint / Double(scale) <= 1, let window {
-            for channel in 0..<min(channelCount, window.channels.count) {
+            for (row, channel) in drawnChannels.enumerated() where channel < window.channels.count {
                 let channelBand = CGRect(
                     x: band.minX,
-                    y: band.minY + CGFloat(channel) * bandHeight,
+                    y: band.minY + CGFloat(row) * bandHeight,
                     width: band.width,
                     height: bandHeight
                 )
@@ -201,7 +205,7 @@ final class TimelineLanePainter {
             sourceStart: span.clip.sourceStart,
             sourceDuration: span.clip.sourceDuration,
             scale: scale,
-            channelCount: channelCount,
+            drawnChannels: drawnChannels,
             sampleGeneration: window?.generation ?? 0
         )
         let columns = Int(floor(span.visibleX.lowerBound * scale))..<Int(ceil(span.visibleX.upperBound * scale))
@@ -209,7 +213,7 @@ final class TimelineLanePainter {
             key: span.clip.id,
             geometry: geometry,
             scale: scale,
-            channelCount: channelCount,
+            channelCount: drawnChannels.count,
             columns: columns,
             half: bandHeight * WaveformColumnGeometry.amplitudeFraction,
             gain: waveformGain(span)
@@ -218,6 +222,7 @@ final class TimelineLanePainter {
                 range,
                 span: span,
                 overview: overview,
+                drawnChannels: drawnChannels,
                 window: window,
                 origin: origin,
                 framesPerPoint: framesPerPoint,
@@ -242,6 +247,7 @@ final class TimelineLanePainter {
         _ range: Range<Int>,
         span: ClipSpan,
         overview: WaveformFileOverview,
+        drawnChannels: [Int],
         window: ClipSampleWindowStore.Window?,
         origin: Double,
         framesPerPoint: Double,
@@ -252,14 +258,15 @@ final class TimelineLanePainter {
         let lower = max(range.lowerBound, Int(floor(span.startX * scale)))
         let upper = min(range.upperBound, Int(ceil((span.startX + span.width) * scale)))
         let empty = [(Float, Float)?](repeating: nil, count: range.count)
-        guard lower < upper else { return Array(repeating: empty, count: overview.channels.count) }
+        guard lower < upper else { return Array(repeating: empty, count: drawnChannels.count) }
 
         // Each column is centered on its pixel, and the window reaches one point into its neighbours.
         let windowStart = origin + (Double(lower) / Double(scale) - Double(span.startX)) * framesPerPoint - overlap * 0.5
         let count = upper - lower
         let leading = [(Float, Float)?](repeating: nil, count: lower - range.lowerBound)
         let trailing = [(Float, Float)?](repeating: nil, count: range.upperBound - upper)
-        return overview.channels.enumerated().map { channel, pyramid in
+        return drawnChannels.map { channel in
+            let pyramid = overview.channels[channel]
             var inside: [(Float, Float)?]?
             if let window, channel < window.channels.count {
                 inside = WaveformOverview.sampleColumns(

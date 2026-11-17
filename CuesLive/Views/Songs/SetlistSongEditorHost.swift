@@ -19,9 +19,13 @@ struct SetlistSongEditorHost: View {
     @State private var tempoChanges: [TempoChange] = []
     @State private var timeSignatureChanges: [TimeSignatureChange] = []
     @State private var midiEvents: [MIDIEvent] = []
-    @State private var undoController = SongUndoController()
     /// The state last written to the project file, so loading it does not count as an edit.
     @State private var persistedState: EditedState?
+
+    /// Shared with the setlist faders, so their moves on this song can be undone here.
+    private var undoController: SongUndoController {
+        SongUndoStacks.controller(for: song.id)
+    }
 
     /// Setlist waveform and section rebuilds wait this long after the last edit.
     private static let persistDelay: Duration = .milliseconds(300)
@@ -47,7 +51,11 @@ struct SetlistSongEditorHost: View {
         }
         .modifier(SongUndoFocusedValue(undoController: undoController))
         .onAppear(perform: loadEditor)
-        .onDisappear(perform: persistIfEdited)
+        .onDisappear {
+            persistIfEdited()
+            // The editor's steps restore through this window's state, which is going away.
+            SongUndoStacks.clear(for: song.id)
+        }
         .task(id: editedState) {
             guard persistedState != nil, editedState != persistedState else { return }
             try? await Task.sleep(for: Self.persistDelay)

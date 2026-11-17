@@ -33,19 +33,28 @@ final class SongUndoController: NSObject {
         undoManager.levelsOfUndo = 50
     }
 
-    func registerChange(
+    /// Records one undoable step. Undo calls `apply(before)`, redo calls `apply(after)`. `State` is
+    /// whatever the step needs to restore: a whole `SongEditSnapshot` for editor edits, or only
+    /// the track gains for a setlist fader move.
+    func registerChange<State: Equatable>(
         actionName: String,
-        before: SongEditSnapshot,
-        after: SongEditSnapshot,
-        apply: @escaping (SongEditSnapshot) -> Void
+        before: State,
+        after: State,
+        apply: @escaping (State) -> Void
     ) {
         guard before != after else { return }
         guard !isApplyingUndo else { return }
 
         undoManager.registerUndo(withTarget: self) { target in
-            target.applySnapshot(before, actionName: actionName, paired: after, using: apply)
+            target.applyState(before, actionName: actionName, paired: after, using: apply)
         }
         undoManager.setActionName(actionName)
+        refreshStackState()
+    }
+
+    /// Drops every step, for when the closures they hold no longer point at a live editor.
+    func removeAllActions() {
+        undoManager.removeAllActions()
         refreshStackState()
     }
 
@@ -63,18 +72,18 @@ final class SongUndoController: NSObject {
         stackRevision &+= 1
     }
 
-    private func applySnapshot(
-        _ snapshot: SongEditSnapshot,
+    private func applyState<State: Equatable>(
+        _ state: State,
         actionName: String,
-        paired: SongEditSnapshot,
-        using apply: @escaping (SongEditSnapshot) -> Void
+        paired: State,
+        using apply: @escaping (State) -> Void
     ) {
         isApplyingUndo = true
-        apply(snapshot)
+        apply(state)
         isApplyingUndo = false
 
         undoManager.registerUndo(withTarget: self) { target in
-            target.applySnapshot(paired, actionName: actionName, paired: snapshot, using: apply)
+            target.applyState(paired, actionName: actionName, paired: state, using: apply)
         }
         undoManager.setActionName(actionName)
         refreshStackState()

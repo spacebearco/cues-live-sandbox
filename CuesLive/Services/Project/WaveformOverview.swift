@@ -194,6 +194,15 @@ struct WaveformFileOverview: Equatable, Sendable {
     /// `false` when the file stopped decoding before its reported length. Such an overview is
     /// shown for the session but never written to the disk cache.
     var isComplete = true
+
+    /// The channels a lane draws, top to bottom. A track split to mono plays one channel of its
+    /// file (`AudioTrack.sourceChannel`), so its lane draws only that one, full height; a
+    /// channel past the last one drawn clamps to it, as playback does (`ChannelSelectedSource`).
+    func drawnChannels(for sourceChannel: Int?) -> [Int] {
+        guard let sourceChannel else { return Array(channels.indices) }
+        guard !channels.isEmpty else { return [] }
+        return [max(0, min(sourceChannel, channels.count - 1))]
+    }
 }
 
 enum WaveformOverviewBuilder {

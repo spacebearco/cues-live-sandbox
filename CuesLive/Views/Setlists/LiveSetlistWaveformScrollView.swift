@@ -13,6 +13,8 @@ struct LiveSetlistWaveformScrollView: View {
     var idlePlayheadTime: TimeInterval? = nil
     let cuedSectionID: UUID?
     let onSeek: (TimeInterval) -> Void
+    /// Drag to scrub on the playing song's lane; `nil` turns it off (Show mode).
+    var onScrub: ((TimeInterval) -> Void)?
     let onCueSection: (SongSection) -> Void
     /// A click on a section's name label in the playing song.
     var onPlaySection: ((SongSection) -> Void)?
@@ -217,6 +219,7 @@ struct LiveSetlistWaveformScrollView: View {
                 isInteractive: isCurrent,
                 showsMissingMediaWarning: songHasMissingMedia(snapshot.songID),
                 onSeek: onSeek,
+                onScrub: onScrub,
                 onCueSection: onCueSection,
                 onPlaySection: onPlaySection,
                 playbackIndex: playbackIndex

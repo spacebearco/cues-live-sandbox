@@ -5,6 +5,8 @@ struct TimelineCanvasLane: Equatable {
     let originY: CGFloat
     let height: CGFloat
     let fileURL: URL
+    /// See `TimelineLanePainter.Lane.sourceChannel`.
+    var sourceChannel: Int?
     let bodyColor: Color
     let clips: [TimelineCanvasClip]
 }
@@ -71,6 +73,7 @@ struct TimelineLaneCanvas {
                     originY: lane.originY,
                     height: lane.height,
                     fileURL: lane.fileURL,
+                    sourceChannel: lane.sourceChannel,
                     bodyColor: lane.bodyColor.resolve(in: environment).cgColor,
                     clips: lane.clips
                 )

@@ -26,6 +26,7 @@ final class RemoteSessionHostService {
     private var connection: NWConnection?
     private var reader: RemoteSessionConnectionReader?
     private var expectedPIN = ""
+    private var pinAttempts = RemotePINAttemptLimiter()
     private var displayName = ""
     private var instanceID = ""
     private var statePushTask: Task<Void, Never>?
@@ -324,9 +325,15 @@ final class RemoteSessionHostService {
     }
 
     private func handleAuth(pin: String) {
+        let now = Date()
+        if let remaining = pinAttempts.remainingLockout(at: now) {
+            rejectAuth(message: RemotePINAttemptLimiter.lockoutMessage(remaining: remaining))
+            return
+        }
         let trimmed = pin.trimmingCharacters(in: .whitespacesAndNewlines)
         let success = trimmed == expectedPIN
         if success {
+            pinAttempts.recordSuccess()
             authTimeoutTask?.cancel()
             authTimeoutTask = nil
             pendingConnection = nil
@@ -345,9 +352,14 @@ final class RemoteSessionHostService {
                 self.startSnapshotRetryLoop()
             }
         } else {
-            enqueue(.authResult(success: false, message: "Incorrect password")) { [weak self] _ in
-                self?.dropClient()
-            }
+            pinAttempts.recordFailure(at: now)
+            rejectAuth(message: "Incorrect password")
+        }
+    }
+
+    private func rejectAuth(message: String) {
+        enqueue(.authResult(success: false, message: message)) { [weak self] _ in
+            self?.dropClient()
         }
     }
 

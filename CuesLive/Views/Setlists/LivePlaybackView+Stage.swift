@@ -185,6 +185,7 @@ extension LivePlaybackView {
                 idlePlayheadTime: playbackClock.isPlaying ? nil : playbackClock.currentTime,
                 cuedSectionID: cuedSectionID,
                 onSeek: handleWaveformClick(at:),
+                onScrub: playMode == .edit ? scrubWaveform(to:) : nil,
                 onCueSection: cueSection,
                 onPlaySection: playSection,
                 onOverlapTapped: { playbackIndex in

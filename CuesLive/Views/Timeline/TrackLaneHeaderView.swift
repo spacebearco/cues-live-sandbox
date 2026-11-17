@@ -7,8 +7,11 @@ struct TrackLaneHeaderView: View {
     let isSelected: Bool
     let groups: [TrackGroup]
     let onSelect: (PointerModifiers) -> Void
-    let onMixChange: () -> Void
-    let onGroupChange: () -> Void
+    /// Runs a mix edit (mute, solo, gain, pan). The header passes the edit in rather than making it
+    /// first, so the editor can take its undo snapshot before the track changes.
+    let onMixChange: (_ edit: () -> Void) -> Void
+    /// Runs a group assignment, passed in for the same reason as `onMixChange`.
+    let onGroupChange: (_ edit: () -> Void) -> Void
     let onManageGroups: () -> Void
     let onRename: () -> Void
     let onDelete: () -> Void
@@ -91,8 +94,7 @@ struct TrackLaneHeaderView: View {
                 isActive: track.isMuted,
                 activeColor: AppColors.muteActive
             ) {
-                track.isMuted.toggle()
-                onMixChange()
+                onMixChange { track.isMuted.toggle() }
             }
 
             TrackMixButton(
@@ -100,8 +102,7 @@ struct TrackLaneHeaderView: View {
                 isActive: track.isSolo,
                 activeColor: AppColors.soloActive
             ) {
-                track.isSolo.toggle()
-                onMixChange()
+                onMixChange { track.isSolo.toggle() }
             }
 
             TrackVolumeField(
@@ -137,28 +138,29 @@ struct TrackLaneHeaderView: View {
     }
 
     private func commitMixDrafts() {
-        if let draftVolume, track.volume != draftVolume {
-            track.volume = draftVolume
-        }
-        if let draftPan, track.pan != draftPan {
-            track.pan = draftPan
-        }
+        let volume = draftVolume
+        let pan = draftPan
         draftVolume = nil
         draftPan = nil
-        onMixChange()
+        onMixChange {
+            if let volume, track.volume != volume {
+                track.volume = volume
+            }
+            if let pan, track.pan != pan {
+                track.pan = pan
+            }
+        }
     }
 
     private var groupPicker: some View {
         Menu {
             Button("No Group") {
-                track.group = nil
-                onGroupChange()
+                onGroupChange { track.group = nil }
             }
 
             ForEach(groups) { group in
                 Button(group.name) {
-                    track.group = group
-                    onGroupChange()
+                    onGroupChange { track.group = group }
                 }
             }
 

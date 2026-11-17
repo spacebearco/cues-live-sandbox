@@ -43,13 +43,15 @@ extension EditView {
                             modifiers: modifiers
                         )
                     },
-                    onMixChange: {
+                    onMixChange: { edit in
                         performUndoableChange("Mix Track") {
+                            edit()
                             viewModel.updateMix(for: track, context: modelContext)
                         }
                     },
-                    onGroupChange: {
+                    onGroupChange: { edit in
                         performUndoableChange("Assign Group") {
+                            edit()
                             viewModel.updateGroup(for: track, context: modelContext)
                         }
                     },

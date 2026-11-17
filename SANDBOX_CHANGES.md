@@ -14,6 +14,45 @@ Newest first.
 
 ---
 
+## Batch 4 – Small add-ons (2026-11-16)
+
+Not yet delivered as a numbered app. Mac and iOS build with zero Swift warnings; the full tests
+pass (573 passed, 2 skipped, 0 failed).
+
+- **Undo mute and solo (build 13 bug):** the editor's track header changed the track and then
+  asked for an undo step, so the "before" snapshot already held the change and undo restored
+  nothing. The header now hands the change to the editor (`onMixChange { … }`), which snapshots
+  first. Fixes M, S, the gain and pan knobs, and the group picker (`TrackLaneHeaderView.swift`,
+  `EditView+TrackHeaders.swift`).
+- **Setlist fader moves can be undone in the editor:** each song now has one undo stack shared by
+  the setlist's editor window and the setlist faders (`SongUndoStacks`). A fader move records a
+  "Change Group Level" step that restores the track gains, then updates playback and the
+  project file. The editor window clears the stack when it closes, since its own steps restore
+  through that window. `SongUndoController.registerChange` is now generic over the state it
+  restores. The library's inline editor (`SongDetailView`) keeps its own stack. Tests:
+  `SongUndoStacksTests`.
+- **Split to Mono lanes draw one channel (build 12 bug):** a split track's editor lane draws only
+  the channel it plays, full height (`WaveformFileOverview.drawnChannels(for:)`,
+  `TimelineLanePainter`). Tests: `WaveformFileOverviewTests`.
+- **Folding the folder column widens the song list (build 18 bug):** showing the folders raised
+  the song browser's minimum width, so the pane drew wider than its stored width; folding them
+  dropped back to the stored width. The layout now keeps the width on screen when the minimum
+  changes (`LivePlaybackSidebarLayout.swift`).
+- **Drag to scrub (Edit mode, macOS):** dragging on the playing song's waveform moves the playhead
+  with the pointer. A mouse drag does not pan the setlist on the Mac, so nothing is taken from
+  Blake's scroll handling; on iPad a drag still pans and there is no scrub. Show mode is
+  unchanged (`LiveSetlistWaveformGestures.swift`, `LivePlaybackView+PlayMode.swift`).
+- **Remote PIN lockout:** after 5 wrong PINs in a row the host refuses every PIN for 30 s, doubling
+  with each further wrong PIN up to 15 min; a right PIN resets it. The count is for the whole
+  host, so reconnecting does not reset it. The client shows the host's message, so older remotes
+  need no update (`RemotePINAttemptLimiter`, `RemoteSessionHostService.swift`). Tests:
+  `RemotePINAttemptLimiterTests`.
+- **Mixer `isPlaying` order: not changed.** No cause found. Every write to the engines' `isPlaying`
+  is synchronous on the main actor, and no mixer or meter view reads it. The note was written
+  without a reproduction, so it needs one before anything is changed.
+
+---
+
 ## Rebase onto Blake's main at `c6bb673` (2026-11-17)
 
 No new build yet. The rebase was made without Xcode, then built locally on 2026-11-16 with no

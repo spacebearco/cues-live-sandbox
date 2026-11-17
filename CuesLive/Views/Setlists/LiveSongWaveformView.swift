@@ -13,6 +13,8 @@ struct LiveSongWaveformView: View {
     /// Shows a caution icon in every section when the song has missing audio files.
     var showsMissingMediaWarning = false
     let onSeek: (TimeInterval) -> Void
+    /// A drag on the waveform moves the playhead with the pointer (macOS). `nil` turns it off.
+    var onScrub: ((TimeInterval) -> Void)?
     let onCueSection: (SongSection) -> Void
     /// A click on a section's name label: play that section from its start.
     var onPlaySection: ((SongSection) -> Void)?
@@ -50,7 +52,8 @@ struct LiveSongWaveformView: View {
                 isEnabled: isInteractive && !mapping.showsLiveHighlights,
                 contentWidth: contentWidth,
                 window: window,
-                onSeek: onSeek
+                onSeek: onSeek,
+                onScrub: onScrub
             ))
             // Above the click gesture, so a label click plays its section and is not also
             // read as a click on the waveform under it.

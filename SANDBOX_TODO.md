@@ -11,27 +11,16 @@ stays and the item is fitted to it or dropped.
 ## Step 0 – Build the rebase onto Blake's main at `c6bb673`
 
 The rebase is done and verified (see `SANDBOX_CHANGES.md`): Mac and iOS build clean and the
-full tests pass. Deliver it as build 25 for Josh to retest the two open items below. Then start
-batch 4.
-
-## Batch 4 – Small add-ons (after the rebase)
-
-All UI or editing work, none in the audio engine. Check each against Blake's main first.
-
-- **Undo mute and solo.** M and S change the track before the undo snapshot is taken, so undo
-  restores nothing (build 13). Take the snapshot first.
-- **Setlist fader moves on the undo stack.** A setlist fader writes the song's track gains
-  (build 21) but can't be undone in the editor.
-- **Split to Mono lanes draw one channel.** A split track's lane still draws both channels of
-  the file (build 12).
-- **Folding the folder column narrows the pane** instead of widening the song list (build 18).
-- **Drag to scrub in Edit mode.** The setlist playhead is click to place only (build 14). Blake's
-  setlist gestures leave drag to the scroll view for panning, so this needs a modifier or a
-  drag on the ruler only.
-- **Remote PIN lockout.** No rate limit or lockout on wrong PINs.
-- **Mixer `isPlaying` order.** It can briefly update out of order. Find the cause first.
+full tests pass. Batch 4 is built on top of it. Deliver both as build 25 for Josh to retest the
+open items below.
 
 ## Open (needs Josh)
+
+- Batch 4 is done (see `SANDBOX_CHANGES.md`) and can ship in build 25 with the rebase. Retest:
+  undo of M / S / knobs, undo of a setlist fader in the editor, Split to Mono lanes, folding the
+  folder column, and drag to scrub in Edit mode.
+- Mixer `isPlaying` can briefly update out of order: no cause found in the code. Needs steps to
+  reproduce (which screen, what was clicked) or a screen recording.
 
 - Waveform "sticks" when scrolling in the editor. Blake's PR #4 (scroll re-renders: bookmark
   resolution and clip hover were rebuilding the editor) likely fixes this. Josh to retest after

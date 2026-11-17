@@ -63,6 +63,16 @@ struct LivePlaybackSidebarLayout<Sidebar: View, MainContent: View>: View {
         .onAppear {
             sidebarWidth = clampedWidth(CGFloat(storedSidebarWidth), totalWidth: totalWidth)
         }
+        .onChange(of: minimumWidth) { oldMinimum, _ in
+            // Keep the width on screen, which a raised minimum may have widened. Folding the song
+            // browser's folders then widens its song list instead of narrowing the pane.
+            sidebarWidth = LivePlaybackSidebarMetrics.clampedSidebarWidth(
+                sidebarWidth,
+                totalWidth: totalWidth,
+                minimumWidth: oldMinimum
+            )
+            persistSidebarWidth()
+        }
     }
 
     private var pane: some View {

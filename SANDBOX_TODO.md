@@ -14,6 +14,10 @@ build Mac and iOS and run the full tests once, deliver one numbered build, and l
 - **Blake's main:** merge it in, don't rebase onto it:
   `git fetch upstream && git merge upstream/main`. `sandbox` is pushed and its build hashes are
   in the build notes, so it is never rewritten or force-pushed.
+  Merge at the start of each batch, before making its changes, and not while Josh is retesting a
+  build. Each build is then Blake's latest plus one batch, so a difference Josh notices has one
+  cause. Merging every batch keeps conflicts small, and keeps each sandbox change a small diff
+  against Blake's current code, which makes it easy for him to take.
 - **Parallel work:** only when two sessions really run at once. Each gets a worktree branch, which
   is merged into `sandbox` and deleted when done. No backup or side branches left behind.
 - **One batch, one build:** make the batch's changes and commit them, then run

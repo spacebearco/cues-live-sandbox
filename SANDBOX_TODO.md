@@ -2,8 +2,8 @@
 
 Josh's open notes, updated 2026-11-17. Work one batch per session: make all the changes, then
 build Mac and iOS and run the full tests once, deliver one numbered build, and log it in
-`SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 25
-(the rebase onto Blake's `c6bb673` and batch 4).
+`SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 26
+(Blake's main at `2145be3` and batch 26).
 
 ## How to work here
 
@@ -35,13 +35,11 @@ stays and the item is fitted to it or dropped.
 
 Josh's notes for the next build, collected from Dropbox `Next batch notes.txt` by `/batch-cues`.
 
-Collected for build 26 (2026-11-16):
-
-- I do not like that the song browser is on the opposite side of where the menu is. Move to the left side.
-- In the all songs section, there needs to be column title of BPM, Key, and Time Signature. (Figure out how to shorten the words time signature)
-
 ## Open (needs Josh)
 
+- Retest in build 26: the song browser button is now on the left next to the browser (Blake's
+  change; say if "the menu" meant something else), the column titles over the song list line
+  up with the values, and Blake's new overlap editor (Command-scroll zoom still works there).
 - Retest in build 25: undo of M / S / knobs, undo of a setlist fader in the editor, Split to Mono
   lanes, folding the folder column, and drag to scrub in Edit mode.
 - Mixer `isPlaying` can briefly update out of order: no cause found in the code. Needs steps to

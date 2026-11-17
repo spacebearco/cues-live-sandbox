@@ -14,6 +14,39 @@ Newest first.
 
 ---
 
+## Build 26 – Blake's overlap editor, song columns (2026-11-16)
+
+Built from `0f7462a`: a merge of Blake's main at `2145be3`, then batch 26. Mac and iOS build with
+zero Swift warnings; the full tests pass.
+
+**Merge of Blake's main (a merge, not a rebase):** his overlap editor rewrite, green
+overlap blocks, the red edit-view playhead in the setlist, no setlist sidebar in the live window,
+the song browser toggle leading the toolbar, and rename / duplicate / delete in the setlist title
+menu. Where his work met the sandbox's:
+- **Kept his:** the live window has no setlist sidebar, so the sandbox's split-column state is
+  gone. Transition icons are neutral gray, so `SetlistTransition+BadgeColor` and the overlap
+  ribbon color are removed. The overlap editor is his rewrite.
+- **Fitted to his:** Command-scroll zoom re-attached to his overlap editor
+  (`SetlistOverlapEditorView+Waveforms.swift`). The setlist cue blink goes through his new
+  `LiveSetlistLanePainter.update(layout:)`. Section-label clicks (build 17) use the shared
+  ribbon height, since his `LiveSectionRibbonLabels` draws the labels and ignores clicks.
+
+**Batch 26:**
+- **Song list column titles (macOS):** a header row above the library list, Title, BPM, Key and
+  Sig, lined up with the row's value columns. "Sig" is short for time signature, spelled out in
+  the tooltip, because the column is 30 pt wide (`SongLibraryListHeader.swift`,
+  `SongLibraryPanel.swift`). The iPad list already had a header and is unchanged.
+- **Song browser on the menu's side:** Josh's note asked for the browser on the left, with its
+  menu. Blake's `f0588c8` already moved the toggle to lead the toolbar beside the left-hand pane,
+  so nothing more was changed.
+
+**Test note:** `LiveEditPlaybackTests.testSplitAndJumpWhilePlayingLeaveNoGap` failed once (a
+33 ms dropout against its 20 ms limit), then passed 3 of 3 on both the merge and the pre-merge
+commit with no code changes. Like the two engine tests named in `AGENTS.md`, it drives the real
+output device (a Rogue Amoeba virtual device on the Mac mini) and is timing-sensitive.
+
+---
+
 ## Build 25 – Blake's latest, undo fixes (2026-11-16)
 
 The rebase onto `c6bb673` below plus batch 4, built from `adc21ed`.

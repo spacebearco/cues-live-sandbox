@@ -1,6 +1,6 @@
 ---
 name: batch-cues
-description: Run one cues.live sandbox batch end to end - merge Blake's main, turn Josh's "Next batch" notes into changes, build and test, ship a numbered build to Dropbox, log it and push. Use when Josh types /batch-cues, optionally with a build number (/batch-cues 26), or asks to start the next sandbox batch or build.
+description: Run one cues.live sandbox batch end to end - merge Blake's main, turn Josh's notes (Dropbox "Next batch notes.txt" and SANDBOX_TODO.md) into changes, build and test, ship a numbered build to Dropbox, log it and push. Use when Josh types /batch-cues, optionally with a build number (/batch-cues 26), or asks to start the next sandbox batch or build.
 ---
 
 # One sandbox batch
@@ -19,6 +19,12 @@ Keep a task list with these steps, and tell Josh in a line when each one starts.
 - `git pull --ff-only origin sandbox` so work pushed from elsewhere is here.
 - The build number is the argument, or one more than the newest entry in
   `~/Library/CloudStorage/Dropbox/Sandbox/Cues App/Build notes.txt`.
+- Collect Josh's notes from the Dropbox inbox,
+  `~/Library/CloudStorage/Dropbox/Sandbox/Cues App/Next batch notes.txt`: everything below the
+  dashed line. Copy them, word for word, under "Next batch" in `SANDBOX_TODO.md` and commit that
+  on its own (`Collect Josh's notes for build <n>`), so they are in git before anything else
+  happens. Leave the Dropbox file alone until step 6. If Dropbox also holds a
+  `Next batch notes (… conflicted copy …).txt`, collect its notes too and tell Josh.
 
 ## 2. Merge Blake's main
 
@@ -32,8 +38,8 @@ Keep a task list with these steps, and tell Josh in a line when each one starts.
 
 ## 3. Turn the notes into a batch
 
-- Read "Next batch" and "Open (needs Josh)" in `SANDBOX_TODO.md`, and anything Josh pasted into
-  the chat.
+- Read "Next batch" (now including the Dropbox notes) and "Open (needs Josh)" in
+  `SANDBOX_TODO.md`, and anything Josh pasted into the chat.
 - Sort each note into one of:
   - **Do now:** UI, editing, or a contained fix. Check it against Blake's main first.
   - **Ask Josh:** unclear what he wants, or more than one reasonable reading.
@@ -68,6 +74,10 @@ Keep a task list with these steps, and tell Josh in a line when each one starts.
   taking it.
 - `SANDBOX_TODO.md`: remove what shipped, clear "Next batch", update "The last build was …", and
   list what Josh should retest under "Open (needs Josh)".
+- Dropbox `Next batch notes.txt`: remove only the notes collected in step 1, so anything Josh
+  added while the batch ran stays for the next one. Replace the status line above the dashed line
+  with `Notes up to <date, time> went into build <n>. Waiting for notes on build <n>.` Delete any
+  conflicted copy whose notes were collected.
 - Commit, then `git push origin sandbox`. Push nothing else; ask Josh before any other change on
   GitHub.
 

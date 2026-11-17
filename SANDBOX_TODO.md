@@ -24,15 +24,16 @@ build Mac and iOS and run the full tests once, deliver one numbered build, and l
   `/batch-cues 26`). The skill (`.claude/skills/batch-cues/`) merges Blake's main, sorts the
   notes below, makes the changes, runs `Scripts/make-sandbox-build.sh` (Mac, iOS, tests, signing,
   Dropbox, build notes), logs the build and pushes.
-- **Feedback:** Josh tests on the MacBook from Dropbox and puts his notes under "Next batch",
-  rough is fine. The next `/batch-cues` sorts them.
+- **Feedback:** Josh tests on the MacBook from Dropbox and writes his notes in
+  `Next batch notes.txt` in the same Dropbox folder, rough is fine. The next `/batch-cues`
+  copies them under "Next batch" here, sorts them, and empties the Dropbox file.
 
 Blake's code takes priority. Where his main covers or conflicts with an item here, his version
 stays and the item is fitted to it or dropped.
 
 ## Next batch
 
-Josh's notes for the next build go here.
+Josh's notes for the next build, collected from Dropbox `Next batch notes.txt` by `/batch-cues`.
 
 ## Open (needs Josh)
 

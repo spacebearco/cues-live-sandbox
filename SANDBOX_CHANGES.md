@@ -1,8 +1,8 @@
 # Sandbox changes
 
 A running log of what changed in this fork (`spacebearco/cues-live-sandbox`, branch
-`spacebear/fixes`) compared with `blakeccross/cues-live`. Since 2026-11-14 the branch is based on
-Blake's main at `dd41c02` (before that, `f18a137`). The fork is a sandbox for features
+`spacebear/fixes`) compared with `blakeccross/cues-live`. Since 2026-11-17 the branch is based on
+Blake's main at `c6bb673` (before that, `dd41c02`, and before that `f18a137`). The fork is a sandbox for features
 Josh wants in cues.live: everything here is a working demo of an idea. Blake decides what goes
 into the real app and how.
 
@@ -11,6 +11,43 @@ files, the tests, and anything Blake should know before taking it. Builds are th
 in the Dropbox `Sandbox/Cues App` folder (`cues.live NN – Label.app`).
 
 Newest first.
+
+---
+
+## Rebase onto Blake's main at `c6bb673` (2026-11-17)
+
+No new build yet: this rebase was done without Xcode, so it has **not been compiled or tested**.
+Build Mac and iOS and run the tests before making build 25 from it. Every changed Swift file
+parses; the project file lists every source on disk.
+
+Blake's main moved from `dd41c02` to `c6bb673`: drag and drop in the setlist and library, video
+tracks, a reworked import sheet with key detection and major/minor, editor scroll performance
+(PR #4), start and end points in the editor, a new editor toolbar, rebuilt click generation, and
+a reworked setlist waveform with transition markers. Every sandbox commit was replayed on top.
+Where both sides touched the same thing:
+
+- **Blake's version kept, ours dropped:**
+  - Editor track URL caching: his `FileStore.cachedTrackURL` replaces our
+    `SongEditorViewModel.fileURL(for:)` (build 05), which is removed. Split to Mono uses his.
+  - The setlist waveform no longer colors sections. His ribbon (played / unplayed marker
+    colors) stays. Section colors still show in the editor and the Song Arrangement sheet.
+  - His click popover and Smart Guide popovers are gone from the editor toolbar, as in his main.
+- **Kept alongside his:**
+  - Section colors: he deleted `ArrangementSectionPalette.swift` and the section color assets.
+    Both are restored (all nine colors) because the editor ruler and the Song Arrangement sheet
+    use them.
+  - Keys: his major/minor (`SongKeyMode`) with our spelling-tolerant `SongMusicalKey(spelling:)`.
+    A black-key minor reads like "C#/Dbm".
+  - Editor toolbar: his click button and Smart Guide toggle, plus our Song Key picker and
+    Waveform Size… next to his Add Video… in the ⋯ menu.
+  - Ruler: our Insert Bars and Duplicate Section moved onto his new `EditView+Rulers.swift`;
+    Split to Mono onto his `EditView+TrackHeaders.swift`.
+  - Section label click (build 17): now a click on a section's marker in his ribbon.
+  - Song names above the lanes (build 20): kept. His setlist headers and transition markers
+    move down by the header row so they line up with the waveforms.
+  - Waveform clicks: his `WaveformSeekGestureModifier` now only reports the clicked time (its
+    section hit test was unused once the setlist applies Show / Edit mode) and uses his lane window.
+  - Cue blink (build 23): his ribbon's cue outline reads the clock (`layout.isCueBright`).
 
 ---
 

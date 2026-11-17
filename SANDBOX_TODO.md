@@ -8,42 +8,11 @@ build Mac and iOS and run the full tests once, deliver one numbered build, and l
 Blake's code takes priority. Where his main covers or conflicts with an item here, his version
 stays and the item is fitted to it or dropped.
 
-## Step 0 – Rebase onto Blake's main at `c6bb673`
+## Step 0 – Build the rebase onto Blake's main at `c6bb673`
 
-`spacebear/fixes` sits on `dd41c02` (2026-11-14). Blake's main is now `c6bb673` (2026-11-16),
-ten commits newer:
-
-- Drag and drop in the setlist and song library (`303286e`)
-- Video tracks and a video output window synced to the song (`99d0247`)
-- Import sheet reworked, with key detection and major/minor (`SongKeyDetector`, `SongKeyMode`) (`e52900a`)
-- Editor scroll performance: cached track URLs, clip hover out of `EditView` state (PR #4)
-- Start and end points (play range) in the editor, new ruler files (`27403ab`)
-- Editor toolbar reworked (`b4eab15`)
-- Click generation rebuilt (procedural click, click settings, smart guide sheet) (`7528c85`)
-- Setlist waveform UI reworked, transition markers in the waveform (`c6bb673`)
-
-Files changed on both sides (expect conflicts): the setlist waveform (`LiveSetlistLanePainter*`,
-`LiveSetlistWaveformScrollView`, `LiveSongWaveformView`, `LiveSetlistWaveformMetrics`,
-`LiveSetlistLaneCanvas`), `GroupMixFadeController`, `LivePlaybackView`, `LiveSetlistRows`,
-the editor (`EditView`, `EditView+Timeline`, `EditView+Clips`, `EditView+LaneCanvas`,
-`EditToolbar`, `EditTransportBar`, `EditStemTimelineView`, `TimelineLanePainter`,
-`WaveformLaneView`, `ClipLaneInteraction`), `SongTrackLoader`, `SongEditorViewModel`,
-`SongMusicalKey`, `ChangeKeyDialog`, `SongFolderImporter`, `SongLibraryPanel+Import`.
-
-Known collisions to resolve in his favor:
-
-- `ArrangementSectionPalette.swift` is gone from his main. Our colors 7–9 and the colors
-  editable in the Song Arrangement sheet move to wherever his section colors now live.
-- `TimelineRulerView.swift` is gone (split into his new ruler files). Our section-ruler
-  double-click to play, Insert Bars and Duplicate Section menu move onto his rulers.
-- His play range (start and end points) and our always-on edit head share the editor ruler.
-  Keep his range; check the edit head still draws and Return / Shift-Return still work.
-- His key detection and major/minor touch our 12-key spelling (`SongMusicalKey`) and the
-  Transpose rename. Keep his model; re-apply the rename only if he hasn't renamed it himself.
-- His setlist waveform rework replaces the lane painting our pinned song headers
-  (`LiveSetlistLanePainter+Header`) and section colors were drawn on.
-- His click generation rewrote `SongTrackLoader`, which carries our Split to Mono channel
-  selection.
+The rebase is done (see `SANDBOX_CHANGES.md`) but was made without Xcode. Build Mac and iOS,
+fix what the compiler finds, run the full tests, and deliver it as build 25 for Josh to retest
+the two open items below. Then start batch 4.
 
 ## Batch 4 – Small add-ons (after the rebase)
 

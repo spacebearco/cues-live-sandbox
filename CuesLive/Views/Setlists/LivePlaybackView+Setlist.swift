@@ -45,7 +45,6 @@ extension LivePlaybackView {
                     switchesSongsOnDoubleClickWhilePlaying: true
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.top, AppSpacing.sm)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

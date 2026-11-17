@@ -41,8 +41,6 @@ extension AppColors {
         /// Edit-selection wash composited over the lanes.
         static let selection = Color(.timelineSelection)
 
-        static let waveformFill = AppColors.textSecondary.opacity(0.6)
-
         /// Playback playhead line.
         static let playhead = Color(.timelinePlayhead)
         /// The edit head, where clicks land and Split, Paste and Play act. Blue, so it never

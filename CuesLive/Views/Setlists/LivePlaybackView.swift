@@ -51,7 +51,6 @@ struct LivePlaybackView: View {
     @State var songBrowserFolder: LiveSongFolderList.Item? = .allSongs
     @AppStorage(LiveSongBrowser<EmptyView>.foldersVisibleStorageKey) var showsSongBrowserFolders = true
     /// Folds the setlists sidebar away while the inline song editor covers the setlist.
-    @State private var splitColumnVisibility: NavigationSplitViewVisibility = .automatic
     #endif
     @AppStorage("liveWaveformVisible") var isWaveformVisible = true
     @State private var songToEditID: UUID?
@@ -64,6 +63,9 @@ struct LivePlaybackView: View {
     @State var showingShowFileExporter = false
     @State var showFileDocument: ShowFileDocument?
     @State var songImportFeedback: SongImportFeedback?
+    @State var isRenamingSetlist = false
+    @State var setlistRenameText = ""
+    @State var isConfirmingSetlistDelete = false
     @State var isImportingSongFolder = false
     @State var setlistFolderSetupSession: SongFolderSetupSession?
     @State var mixerDetent: LiveGroupMixerDetent = .hidden
@@ -96,15 +98,9 @@ struct LivePlaybackView: View {
 
     var body: some View {
         #if os(macOS)
-        NavigationSplitView(columnVisibility: $splitColumnVisibility) {
-            librarySidebar
-        } detail: {
-            NavigationStack {
-                playbackRoot
-            }
+        NavigationStack {
+            playbackRoot
         }
-        // Outside the detail column, which SwiftUI can show twice at once; a stale copy's
-        // onDisappear would otherwise reset the File menu after the new copy enabled it.
         .onAppear {
             syncLiveSetlistMenuController()
         }
@@ -180,13 +176,13 @@ struct LivePlaybackView: View {
     }
 
     private func playbackBody(for setlist: Setlist) -> some View {
-        playbackBodyLifecycle(
+        setlistLibraryDialogs(on: playbackBodyLifecycle(
             for: setlist,
             content: playbackBodyPresentations(
                 for: setlist,
                 content: playbackBodyChrome(for: setlist)
             )
-        )
+        ))
     }
 
     private func playbackBodyChrome(for setlist: Setlist) -> some View {
@@ -228,6 +224,7 @@ struct LivePlaybackView: View {
             playbackToolbar(for: setlist)
         }
         #if os(macOS)
+        .toolbar(removing: .sidebarToggle)
         .appLockToolbarDisplayMode()
         #endif
         .appBackground(.primary)
@@ -380,10 +377,6 @@ struct LivePlaybackView: View {
             }
             .onChange(of: songToEditID) { oldValue, newValue in
                 SetlistEditorLink.shared.setInlineEditorOpen(newValue != nil)
-                #if os(macOS)
-                // The pushed editor already covers the song browser; hide the setlists with it.
-                withAnimation { splitColumnVisibility = newValue != nil ? .detailOnly : .automatic }
-                #endif
                 if newValue != nil {
                     clearMarkerCue()
                     sectionLoop.reset()

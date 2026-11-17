@@ -14,9 +14,19 @@ Newest first.
 
 ---
 
+## Build 25 – Blake's latest, undo fixes (2026-11-16)
+
+The rebase onto `c6bb673` below plus batch 4, built from `adc21ed`.
+
+Packaging note: Blake's project sets bundle ID `live.cues` and Hardened Runtime on, so sandbox
+builds override them on the command line rather than in the project:
+`xcodebuild -configuration Release PRODUCT_BUNDLE_IDENTIFIER=com.spacebear.cues
+ENABLE_HARDENED_RUNTIME=NO CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
+SPARKLE_FEED_URL= CURRENT_PROJECT_VERSION=<build>`.
+
 ## Batch 4 – Small add-ons (2026-11-16)
 
-Not yet delivered as a numbered app. Mac and iOS build with zero Swift warnings; the full tests
+Shipped in build 25. Mac and iOS build with zero Swift warnings; the full tests
 pass (573 passed, 2 skipped, 0 failed).
 
 - **Undo mute and solo (build 13 bug):** the editor's track header changed the track and then
@@ -55,9 +65,9 @@ pass (573 passed, 2 skipped, 0 failed).
 
 ## Rebase onto Blake's main at `c6bb673` (2026-11-17)
 
-No new build yet. The rebase was made without Xcode, then built locally on 2026-11-16 with no
+Shipped in build 25. The rebase was made without Xcode, then built locally on 2026-11-16 with no
 changes needed: Mac and iOS (generic simulator) build with zero Swift warnings, and the full
-test run passes (561 passed, 2 skipped, 0 failed). Ready to deliver as build 25.
+test run passes (561 passed, 2 skipped, 0 failed).
 
 Blake's main moved from `dd41c02` to `c6bb673`: drag and drop in the setlist and library, video
 tracks, a reworked import sheet with key detection and major/minor, editor scroll performance

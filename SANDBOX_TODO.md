@@ -2,26 +2,18 @@
 
 Josh's open notes, updated 2026-11-17. Work one batch per session: make all the changes, then
 build Mac and iOS and run the full tests once, deliver one numbered build, and log it in
-`SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 24
-(batches 1 to 3 of 2026-11-13 done).
+`SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 25
+(the rebase onto Blake's `c6bb673` and batch 4).
 
 Blake's code takes priority. Where his main covers or conflicts with an item here, his version
 stays and the item is fitted to it or dropped.
 
-## Step 0 – Build the rebase onto Blake's main at `c6bb673`
-
-The rebase is done and verified (see `SANDBOX_CHANGES.md`): Mac and iOS build clean and the
-full tests pass. Batch 4 is built on top of it. Deliver both as build 25 for Josh to retest the
-open items below.
-
 ## Open (needs Josh)
 
-- Batch 4 is done (see `SANDBOX_CHANGES.md`) and can ship in build 25 with the rebase. Retest:
-  undo of M / S / knobs, undo of a setlist fader in the editor, Split to Mono lanes, folding the
-  folder column, and drag to scrub in Edit mode.
+- Retest in build 25: undo of M / S / knobs, undo of a setlist fader in the editor, Split to Mono
+  lanes, folding the folder column, and drag to scrub in Edit mode.
 - Mixer `isPlaying` can briefly update out of order: no cause found in the code. Needs steps to
   reproduce (which screen, what was clicked) or a screen recording.
-
 - Waveform "sticks" when scrolling in the editor. Blake's PR #4 (scroll re-renders: bookmark
   resolution and clip hover were rebuilding the editor) likely fixes this. Josh to retest after
   the rebase; if it still sticks, get a screen recording.

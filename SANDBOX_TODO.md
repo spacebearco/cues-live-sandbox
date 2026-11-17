@@ -5,6 +5,24 @@ build Mac and iOS and run the full tests once, deliver one numbered build, and l
 `SANDBOX_CHANGES.md`. Remove items from this file as they ship. The last build was 25
 (the rebase onto Blake's `c6bb673` and batch 4).
 
+## How to work here
+
+- **Where:** the Mac mini, in this folder, on the `sandbox` branch. It has Xcode, so every change
+  is built and tested before a build ships. Josh drives sessions from the MacBook or phone with
+  Remote Control. Cloud sessions can't compile; use them only for planning or writing, and pull
+  their work here before building.
+- **Blake's main:** merge it in, don't rebase onto it:
+  `git fetch upstream && git merge upstream/main`. `sandbox` is pushed and its build hashes are
+  in the build notes, so it is never rewritten or force-pushed.
+- **Parallel work:** only when two sessions really run at once. Each gets a worktree branch, which
+  is merged into `sandbox` and deleted when done. No backup or side branches left behind.
+- **One batch, one build:** make the batch's changes and commit them, then run
+  `Scripts/make-sandbox-build.sh <number> "<label>" "<change>" ...`. It checks Mac, iOS and the
+  tests, builds with the fork's signing, copies the app to Dropbox and adds the build notes
+  entry. Then log the build in `SANDBOX_CHANGES.md` and `git push origin sandbox`.
+- **Feedback:** Josh tests on the MacBook from Dropbox; his notes go into this file as the next
+  batch.
+
 Blake's code takes priority. Where his main covers or conflicts with an item here, his version
 stays and the item is fitted to it or dropped.
 

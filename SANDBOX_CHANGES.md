@@ -1,7 +1,7 @@
 # Sandbox changes
 
 A running log of what changed in this fork (`spacebearco/cues-live-sandbox`, branch
-`spacebear/fixes`) compared with `blakeccross/cues-live`. Since 2026-11-17 the branch is based on
+`sandbox`, formerly `spacebear/fixes`) compared with `blakeccross/cues-live`. Since 2026-11-17 the branch is based on
 Blake's main at `c6bb673` (before that, `dd41c02`, and before that `f18a137`). The fork is a sandbox for features
 Josh wants in cues.live: everything here is a working demo of an idea. Blake decides what goes
 into the real app and how.

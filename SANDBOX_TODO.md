@@ -10,9 +10,9 @@ stays and the item is fitted to it or dropped.
 
 ## Step 0 – Build the rebase onto Blake's main at `c6bb673`
 
-The rebase is done (see `SANDBOX_CHANGES.md`) but was made without Xcode. Build Mac and iOS,
-fix what the compiler finds, run the full tests, and deliver it as build 25 for Josh to retest
-the two open items below. Then start batch 4.
+The rebase is done and verified (see `SANDBOX_CHANGES.md`): Mac and iOS build clean and the
+full tests pass. Deliver it as build 25 for Josh to retest the two open items below. Then start
+batch 4.
 
 ## Batch 4 – Small add-ons (after the rebase)
 

@@ -16,9 +16,9 @@ Newest first.
 
 ## Rebase onto Blake's main at `c6bb673` (2026-11-17)
 
-No new build yet: this rebase was done without Xcode, so it has **not been compiled or tested**.
-Build Mac and iOS and run the tests before making build 25 from it. Every changed Swift file
-parses; the project file lists every source on disk.
+No new build yet. The rebase was made without Xcode, then built locally on 2026-11-16 with no
+changes needed: Mac and iOS (generic simulator) build with zero Swift warnings, and the full
+test run passes (561 passed, 2 skipped, 0 failed). Ready to deliver as build 25.
 
 Blake's main moved from `dd41c02` to `c6bb673`: drag and drop in the setlist and library, video
 tracks, a reworked import sheet with key detection and major/minor, editor scroll performance

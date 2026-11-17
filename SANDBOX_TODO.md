@@ -20,15 +20,19 @@ build Mac and iOS and run the full tests once, deliver one numbered build, and l
   against Blake's current code, which makes it easy for him to take.
 - **Parallel work:** only when two sessions really run at once. Each gets a worktree branch, which
   is merged into `sandbox` and deleted when done. No backup or side branches left behind.
-- **One batch, one build:** make the batch's changes and commit them, then run
-  `Scripts/make-sandbox-build.sh <number> "<label>" "<change>" ...`. It checks Mac, iOS and the
-  tests, builds with the fork's signing, copies the app to Dropbox and adds the build notes
-  entry. Then log the build in `SANDBOX_CHANGES.md` and `git push origin sandbox`.
-- **Feedback:** Josh tests on the MacBook from Dropbox; his notes go into this file as the next
-  batch.
+- **One batch, one build:** start a fresh session here and type `/batch-cues` (or
+  `/batch-cues 26`). The skill (`.claude/skills/batch-cues/`) merges Blake's main, sorts the
+  notes below, makes the changes, runs `Scripts/make-sandbox-build.sh` (Mac, iOS, tests, signing,
+  Dropbox, build notes), logs the build and pushes.
+- **Feedback:** Josh tests on the MacBook from Dropbox and puts his notes under "Next batch",
+  rough is fine. The next `/batch-cues` sorts them.
 
 Blake's code takes priority. Where his main covers or conflicts with an item here, his version
 stays and the item is fitted to it or dropped.
+
+## Next batch
+
+Josh's notes for the next build go here.
 
 ## Open (needs Josh)
 

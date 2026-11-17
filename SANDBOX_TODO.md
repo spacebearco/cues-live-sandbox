@@ -35,6 +35,11 @@ stays and the item is fitted to it or dropped.
 
 Josh's notes for the next build, collected from Dropbox `Next batch notes.txt` by `/batch-cues`.
 
+Collected for build 26 (2026-11-16):
+
+- I do not like that the song browser is on the opposite side of where the menu is. Move to the left side.
+- In the all songs section, there needs to be column title of BPM, Key, and Time Signature. (Figure out how to shorten the words time signature)
+
 ## Open (needs Josh)
 
 - Retest in build 25: undo of M / S / knobs, undo of a setlist fader in the editor, Split to Mono
